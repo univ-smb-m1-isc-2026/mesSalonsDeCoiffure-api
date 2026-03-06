@@ -1,13 +1,45 @@
-- name: Log in to GitHub Container Registry
+name: Java CI/CD with SonarCloud
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch: # Permet de lancer l'action manuellement depuis GitHub
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      #- name: Build and Test with Coverage
+        # N'oublie pas de remplacer "ton_projet_key" par la vraie clé SonarCloud
+       # run: mvn clean verify sonar:sonar \
+       #   -Dsonar.projectKey=ton_projet_key \
+       #   -Dsonar.organization=univ-smb-m1-isc-2026 \
+       #   -Dsonar.host.url=https://sonarcloud.io \
+       #   -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+
+      - name: Login to GitHub Container Registry (GHCR)
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          # Le GITHUB_TOKEN est généré automatiquement par l'Action, pas besoin de le créer !
+          password: ${{ secrets.GITHUB_TOKEN }} 
 
-      - name: Build and push Docker image
+      - name: Build and Push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
+          # Le lien exact demandé par ton prof pour l'organisation
           tags: ghcr.io/univ-smb-m1-isc-2026/messalonsdecoiffure-api:latest
