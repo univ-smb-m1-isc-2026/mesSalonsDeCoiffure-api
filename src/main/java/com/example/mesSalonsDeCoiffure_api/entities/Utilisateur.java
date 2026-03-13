@@ -15,6 +15,12 @@ public class Utilisateur {
     // Crucial pour la User Story "Notification WhatsApp"
     private String telephone; 
 
+    // 👇 Nouveaux champs pour la sécurité 👇
+    private String motDePasse;
+    
+    // Le rôle définira les droits. Ex: "USER" ou "ADMIN"
+    private String role;
+
     // Getters et Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -30,4 +36,10 @@ public class Utilisateur {
 
     public String getTelephone() { return telephone; }
     public void setTelephone(String telephone) { this.telephone = telephone; }
+
+    public String getMotDePasse() { return motDePasse; }
+    public void setMotDePasse(String motDePasse) { this.motDePasse = motDePasse; }
+
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
 }
