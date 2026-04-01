@@ -42,7 +42,7 @@ public class EmployeController {
                 .orElseThrow(() -> new RuntimeException("Prestation non trouvée"));
 
         // On ajoute la prestation à la liste de l'employé
-        employe.getPrestationsProposees().add(prestation);
+        employe.getPrestations().add(prestation);
         return employeRepository.save(employe);
     }
 }

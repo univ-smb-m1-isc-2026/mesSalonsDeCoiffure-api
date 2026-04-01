@@ -3,6 +3,8 @@ package com.example.mesSalonsDeCoiffure_api.entities;
 import jakarta.persistence.*;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 public class Employe {
     @Id
@@ -14,16 +16,17 @@ public class Employe {
 
     @ManyToOne
     @JoinColumn(name = "salon_id")
+    @JsonIgnore
     private Salon salon;
 
     // Un employé peut faire plusieurs prestations, et une prestation est faite par plusieurs employés
     @ManyToMany
     @JoinTable(
-        name = "employe_prestation",
+        name = "employe_prestations",
         joinColumns = @JoinColumn(name = "employe_id"),
         inverseJoinColumns = @JoinColumn(name = "prestation_id")
     )
-    private List<Prestation> prestationsProposees = new java.util.ArrayList<>();
+    private java.util.List<Prestation> prestations = new java.util.ArrayList<>();
 
     // Getters et Setters
     public Long getId() { return id; }
@@ -38,8 +41,8 @@ public class Employe {
     public Salon getSalon() { return salon; }
     public void setSalon(Salon salon) {this.salon = salon;}
 
-    public List<Prestation> getPrestationsProposees(){ return prestationsProposees; }
-    public void setPrestationsProposees(List<Prestation> prestationsProposees) {this.prestationsProposees = prestationsProposees;}
+    public List<Prestation> getPrestations() { return prestations; }
+    public void setPrestations(List<Prestation> prestations) { this.prestations = prestations; }
     
 
 }

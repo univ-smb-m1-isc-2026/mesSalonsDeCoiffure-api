@@ -21,6 +21,9 @@ public class Utilisateur {
     // Le rôle définira les droits. Ex: "USER" ou "ADMIN"
     private String role;
 
+    private boolean rappelsReguliers = false;
+    private boolean notifsWhatsapp = false;
+
     // Getters et Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -42,4 +45,10 @@ public class Utilisateur {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public boolean isRappelsReguliers() { return rappelsReguliers; }
+    public void setRappelsReguliers(boolean rappelsReguliers) { this.rappelsReguliers = rappelsReguliers; }
+
+    public boolean isNotifsWhatsapp() { return notifsWhatsapp; }
+    public void setNotifsWhatsapp(boolean notifsWhatsapp) { this.notifsWhatsapp = notifsWhatsapp; }
 }

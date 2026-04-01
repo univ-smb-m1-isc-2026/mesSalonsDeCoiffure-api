@@ -9,6 +9,10 @@ public class Salon {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
+    @ManyToOne
+    @JoinColumn(name = "gerant_id")
+    private Utilisateur gerant;
+
     private String nom;
     private String adresse;
     
@@ -19,6 +23,9 @@ public class Salon {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
+    public Utilisateur getGerant() { return gerant; }
+    public void setGerant(Utilisateur gerant) {this.gerant = gerant;}
 
     public String getNom() { return nom; }
     public void setNom(String nom) { this.nom = nom; }

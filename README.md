@@ -37,6 +37,51 @@ docker build -t messalons-api .
 docker builder prune -f
 ```
 
+## pgAdmin (provisoire)
+
+🔌 Étape 1 : Ajouter le serveur dans pgAdmin
+
+    Ouvre ton interface pgAdmin dans ton navigateur.
+
+    Dans la colonne de gauche, fais un clic droit sur Servers.
+
+    Va sur Register (Enregistrer) > Server....
+
+    Une boîte de dialogue s'ouvre.
+
+📝 Étape 2 : L'onglet "General"
+
+    Name : Donne-lui le nom que tu veux (ex: BDD Mes Salons). C'est juste pour toi.
+
+🔗 Étape 3 : L'onglet "Connection" (Le plus important !)
+
+C'est ici qu'il faut relier pgAdmin à ton conteneur Docker. Remplis les champs comme ceci (je me base sur les logs de ton API que tu m'as envoyés plus tôt) :
+
+    Host name/address : * Cas A (pgAdmin tourne AUSSI dans ton Docker) : Tape db. (C'est le nom de ton conteneur de base de données, Docker fera le lien tout seul).
+
+        Cas B (pgAdmin est un logiciel installé directement sur ton PC/Mac) : Tape localhost.
+
+    Port : 5432 (c'est le port par défaut).
+
+    Maintenance database : mes_salons (J'ai vu dans tes logs que c'était le nom de ta base).
+
+    Username : Regarde dans ton fichier docker-compose.yml, sous la section db (généralement c'est postgres ou admin).
+
+    Password : Pareil, regarde ton docker-compose.yml (le mot de passe que tu as défini pour POSTGRES_PASSWORD).
+
+    Coche la case Save password pour ne pas avoir à le retaper à chaque fois.
+
+👁️ Étape 4 : Visualiser la magie
+
+Si la connexion réussit, ton nouveau serveur va apparaître à gauche. Déroule les dossiers dans cet ordre précis :
+
+    📂 Servers > BDD Mes Salons
+
+    🛢️ Databases > mes_salons
+
+    📁 Schemas > public
+
+    📋 Tables
 ## Testing 
 
 ```

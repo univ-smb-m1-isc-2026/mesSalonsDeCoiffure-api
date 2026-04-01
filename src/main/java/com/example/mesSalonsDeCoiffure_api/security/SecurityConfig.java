@@ -35,16 +35,18 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/reservations/disponibles").permitAll()
+                .requestMatchers("/api/salons/**").permitAll()
                 .requestMatchers("/api/salons").permitAll() 
-                .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/users/me").authenticated() 
                 .anyRequest().authenticated()
             )
-            // 👇 2. On place notre filtre juste avant le filtre classique de Spring
+            // 2. On place notre filtre juste avant le filtre classique de Spring
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-    // 👇 2. Le fameux passeport CORS 👇
+    // 2. Le fameux passeport CORS
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();

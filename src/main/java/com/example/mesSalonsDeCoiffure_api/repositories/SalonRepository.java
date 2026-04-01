@@ -1,6 +1,9 @@
 package com.example.mesSalonsDeCoiffure_api.repositories;
 
 import com.example.mesSalonsDeCoiffure_api.entities.Salon;
+
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -10,4 +13,5 @@ public interface SalonRepository extends JpaRepository<Salon, Long> {
     
     // Tu peux aussi ajouter des requêtes personnalisées (ex: chercher par nom)
     // List<Salon> findByNomContainingIgnoreCase(String nom);
+    List<Salon> findByGerantId(Long gerantId);
 }

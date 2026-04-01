@@ -22,7 +22,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Autowired
     private JwtService jwtService;
-
     @Autowired
     private UtilisateurRepository utilisateurRepository;
 
@@ -30,42 +29,56 @@ public class JwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         
-        // 1. On cherche le header "Authorization"
+        System.out.println("\n=== 🔍 NOUVELLE REQUETE : " + request.getMethod() + " " + request.getRequestURI() + " ===");
+        
         final String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            System.out.println("❌ ÉTAPE 1 : Aucun token Bearer trouvé dans la requête.");
             filterChain.doFilter(request, response);
-            return; // Pas de token ? On passe au filtre suivant (qui bloquera si la route est protégée)
+            return;
         }
 
-        // 2. On extrait le token (en enlevant les 7 premiers caractères "Bearer ")
+        System.out.println("✅ ÉTAPE 1 : Token Bearer trouvé !");
         final String jwt = authHeader.substring(7);
-        final String email = jwtService.extractEmail(jwt);
-
-        // 3. Si on a un email et que l'utilisateur n'est pas encore identifié dans le contexte actuel
-        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        
+        try {
+            String email = jwtService.extractEmail(jwt);
+            System.out.println("✅ ÉTAPE 2 : Email extrait du token -> " + email);
             
-            // On vérifie que le token est bien valide
-            if (jwtService.validateToken(jwt)) {
-                
-                Optional<Utilisateur> userOpt = utilisateurRepository.findByEmail(email);
-                
-                if (userOpt.isPresent()) {
-                    Utilisateur user = userOpt.get();
+            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                if (jwtService.validateToken(jwt)) {
+                    System.out.println("✅ ÉTAPE 3 : Token cryptographiquement valide.");
                     
-                    // On dit officiellement à Spring Security : "Cet utilisateur est connecté et voici son rôle"
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            user, 
-                            null, 
-                            Collections.singletonList(new SimpleGrantedAuthority(user.getRole()))
-                    );
-                    
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    Optional<Utilisateur> userOpt = utilisateurRepository.findByEmail(email);
+                    if (userOpt.isPresent()) {
+                        Utilisateur user = userOpt.get();
+                        
+                        String role = user.getRole();
+                        if (role == null) role = "USER"; // Sécurité anti-crash
+                        role = role.toUpperCase();
+                        
+                        if (!role.startsWith("ROLE_")) {
+                            role = "ROLE_" + role;
+                        }
+                        System.out.println("✅ ÉTAPE 4 : Utilisateur trouvé en BDD. Rôle final attribué -> " + role);
+                        
+                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                user.getEmail(), null, Collections.singletonList(new SimpleGrantedAuthority(role))
+                        );
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                        System.out.println("🔓 ÉTAPE 5 : Accès autorisé par le filtre, passage à la vérification de la route...");
+                    } else {
+                        System.out.println("❌ ÉTAPE 4 : L'utilisateur n'existe pas dans PostgreSQL !");
+                    }
+                } else {
+                    System.out.println("❌ ÉTAPE 3 : Le token est invalide (ancienne clé ou expiré).");
                 }
             }
+        } catch (Exception e) {
+            System.out.println("❌ ERREUR CRITIQUE DANS LE FILTRE : " + e.getMessage());
         }
         
-        // On continue la chaîne des filtres
         filterChain.doFilter(request, response);
     }
 }

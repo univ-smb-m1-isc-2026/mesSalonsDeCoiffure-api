@@ -2,6 +2,8 @@ package com.example.mesSalonsDeCoiffure_api.entities;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -16,6 +18,7 @@ public class Prestation {
 
     @ManyToOne
     @JoinColumn(name = "salon_id")
+    @JsonIgnore
     private Salon salon;
 
     // Getters et Setters
