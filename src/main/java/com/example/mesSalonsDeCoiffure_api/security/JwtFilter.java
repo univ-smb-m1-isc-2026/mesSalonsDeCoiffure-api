@@ -22,7 +22,7 @@ import java.util.Optional;
 public class JwtFilter extends OncePerRequestFilter {
 
     // 1. Remplacement de System.out par un Logger
-    private static final Logger logger = LoggerFactory.getLogger(JwtFilter.class);
+    private static final Logger log = LoggerFactory.getLogger(JwtFilter.class);
 
     // 2. Remplacement de @Autowired par l'injection par constructeur (champs final)
     private final JwtService jwtService;
@@ -37,23 +37,23 @@ public class JwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        logger.info("=== 🔍 NOUVELLE REQUETE : {} {} ===", request.getMethod(), request.getRequestURI());
+        log.info("=== 🔍 NOUVELLE REQUETE : {} {} ===", request.getMethod(), request.getRequestURI());
 
         final String authHeader = request.getHeader("Authorization");
 
         // Guard Clause : Si pas de token, on passe au filtre suivant et on s'arrête là
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            logger.debug("❌ ÉTAPE 1 : Aucun token Bearer trouvé dans la requête.");
+            log.debug("❌ ÉTAPE 1 : Aucun token Bearer trouvé dans la requête.");
             filterChain.doFilter(request, response);
             return;
         }
 
-        logger.info("✅ ÉTAPE 1 : Token Bearer trouvé !");
+        log.info("✅ ÉTAPE 1 : Token Bearer trouvé !");
         final String jwt = authHeader.substring(7);
 
         try {
             String email = jwtService.extractEmail(jwt);
-            logger.info("✅ ÉTAPE 2 : Email extrait du token -> {}", email);
+            log.info("✅ ÉTAPE 2 : Email extrait du token -> {}", email);
 
             // Guard Clause : Si l'email est nul ou si l'utilisateur est déjà authentifié
             if (email == null || SecurityContextHolder.getContext().getAuthentication() != null) {
@@ -63,17 +63,17 @@ public class JwtFilter extends OncePerRequestFilter {
 
             // Guard Clause : Si le token est invalide
             if (!jwtService.validateToken(jwt)) {
-                logger.warn("❌ ÉTAPE 3 : Le token est invalide (ancienne clé ou expiré).");
+                log.warn("❌ ÉTAPE 3 : Le token est invalide (ancienne clé ou expiré).");
                 filterChain.doFilter(request, response);
                 return;
             }
-            logger.info("✅ ÉTAPE 3 : Token cryptographiquement valide.");
+            log.info("✅ ÉTAPE 3 : Token cryptographiquement valide.");
 
             Optional<Utilisateur> userOpt = utilisateurRepository.findByEmail(email);
             
             // Guard Clause : Si l'utilisateur n'existe plus en BDD
             if (userOpt.isEmpty()) {
-                logger.warn("❌ ÉTAPE 4 : L'utilisateur n'existe pas dans PostgreSQL !");
+                log.warn("❌ ÉTAPE 4 : L'utilisateur n'existe pas dans PostgreSQL !");
                 filterChain.doFilter(request, response);
                 return;
             }
@@ -88,17 +88,17 @@ public class JwtFilter extends OncePerRequestFilter {
                 role = "ROLE_" + role;
             }
             
-            logger.info("✅ ÉTAPE 4 : Utilisateur trouvé en BDD. Rôle final attribué -> {}", role);
+            log.info("✅ ÉTAPE 4 : Utilisateur trouvé en BDD. Rôle final attribué -> {}", role);
 
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                     user.getEmail(), null, Collections.singletonList(new SimpleGrantedAuthority(role))
             );
             SecurityContextHolder.getContext().setAuthentication(authToken);
-            logger.info("🔓 ÉTAPE 5 : Accès autorisé par le filtre, passage à la vérification de la route...");
+            log.info("🔓 ÉTAPE 5 : Accès autorisé par le filtre, passage à la vérification de la route...");
 
         } catch (Exception e) {
             // Utilisation du logger pour capturer proprement la trace de l'erreur
-            logger.error("❌ ERREUR CRITIQUE DANS LE FILTRE : {}", e.getMessage(), e);
+            log.error("❌ ERREUR CRITIQUE DANS LE FILTRE : {}", e.getMessage(), e);
         }
 
         filterChain.doFilter(request, response);

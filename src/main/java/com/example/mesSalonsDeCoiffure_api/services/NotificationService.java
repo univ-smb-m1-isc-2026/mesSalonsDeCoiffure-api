@@ -21,8 +21,6 @@ public class NotificationService {
         // 2. Pour chaque RDV, vérifier si le client a `notifsWhatsapp == true`
         // 3. Si OUI -> Appeler l'API de Twilio (ou Meta) pour envoyer un SMS/WhatsApp au numéro du client !
         
-        // Exemple (Pseudo-code) :
-        // if(client.isNotifsWhatsapp()) { Twilio.sendMessage(client.getTelephone(), "Votre rdv est demain !"); }
     }
 
     // USER STORY : Rappels réguliers pour revenir au salon

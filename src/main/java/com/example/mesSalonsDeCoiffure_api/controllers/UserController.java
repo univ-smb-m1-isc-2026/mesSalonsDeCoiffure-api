@@ -1,5 +1,6 @@
 package com.example.mesSalonsDeCoiffure_api.controllers;
 
+import com.example.mesSalonsDeCoiffure_api.dto.UserUpdateDTO;
 import com.example.mesSalonsDeCoiffure_api.entities.Reservation;
 import com.example.mesSalonsDeCoiffure_api.entities.Utilisateur;
 import com.example.mesSalonsDeCoiffure_api.repositories.ReservationRepository;
@@ -29,10 +30,11 @@ public class UserController {
     }
 
     @PutMapping("/me")
-    public Utilisateur modifierMonProfil(@RequestBody Utilisateur modifications, Authentication authentication) {
+    public Utilisateur modifierMonProfil(@RequestBody UserUpdateDTO modifications, Authentication authentication) {
         String email = authentication.getName();
         Utilisateur userActuel = utilisateurRepository.findByEmail(email).orElseThrow();
 
+        // Transfert sécurisé
         userActuel.setNom(modifications.getNom());
         userActuel.setTelephone(modifications.getTelephone());
         userActuel.setRappelsReguliers(modifications.isRappelsReguliers());

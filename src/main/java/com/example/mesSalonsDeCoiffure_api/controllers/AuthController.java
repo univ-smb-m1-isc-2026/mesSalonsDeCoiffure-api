@@ -2,6 +2,7 @@ package com.example.mesSalonsDeCoiffure_api.controllers;
 
 import com.example.mesSalonsDeCoiffure_api.dto.AuthRequestDTO;
 import com.example.mesSalonsDeCoiffure_api.dto.AuthResponseDTO;
+import com.example.mesSalonsDeCoiffure_api.dto.RegisterRequestDTO;
 import com.example.mesSalonsDeCoiffure_api.entities.Utilisateur;
 import com.example.mesSalonsDeCoiffure_api.repositories.UtilisateurRepository;
 import com.example.mesSalonsDeCoiffure_api.security.JwtService;
@@ -28,17 +29,20 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponseDTO> register(@RequestBody Utilisateur utilisateur) {
-        if (utilisateurRepository.findByEmail(utilisateur.getEmail()).isPresent()) {
+    public ResponseEntity<AuthResponseDTO> register(@RequestBody RegisterRequestDTO request) {
+        
+        if (utilisateurRepository.findByEmail(request.getEmail()).isPresent()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new AuthResponseDTO(null, null, "Cet email est déjà utilisé."));
         }
 
-        utilisateur.setMotDePasse(passwordEncoder.encode(utilisateur.getMotDePasse()));
-        
-        if (utilisateur.getRole() == null || utilisateur.getRole().isEmpty()) {
-            utilisateur.setRole("USER"); 
-        }
+        // On transfère les données du DTO vers une vraie Entité Utilisateur
+        Utilisateur utilisateur = new Utilisateur();
+        utilisateur.setNom(request.getNom());
+        utilisateur.setEmail(request.getEmail());
+        utilisateur.setTelephone(request.getTelephone());
+        utilisateur.setMotDePasse(passwordEncoder.encode(request.getMotDePasse()));
+        utilisateur.setRole("USER"); 
         
         utilisateurRepository.save(utilisateur);
         

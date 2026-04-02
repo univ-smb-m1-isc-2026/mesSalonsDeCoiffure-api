@@ -2,186 +2,200 @@ package com.example.mesSalonsDeCoiffure_api.controllers;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.example.mesSalonsDeCoiffure_api.entities.Salon;
-import com.example.mesSalonsDeCoiffure_api.entities.Utilisateur;
-import com.example.mesSalonsDeCoiffure_api.repositories.SalonRepository;
-import com.example.mesSalonsDeCoiffure_api.repositories.UtilisateurRepository;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+// Imports de tes Entités
+import com.example.mesSalonsDeCoiffure_api.entities.Creneau;
+import com.example.mesSalonsDeCoiffure_api.entities.Employe;
+import com.example.mesSalonsDeCoiffure_api.entities.Prestation;
+import com.example.mesSalonsDeCoiffure_api.entities.Salon;
+import com.example.mesSalonsDeCoiffure_api.entities.Utilisateur;
+
+// Imports de tes DTOs (Sécurité)
+import com.example.mesSalonsDeCoiffure_api.dto.CreneauDTO;
+import com.example.mesSalonsDeCoiffure_api.dto.EmployeDTO;
+import com.example.mesSalonsDeCoiffure_api.dto.PrestationDTO;
+import com.example.mesSalonsDeCoiffure_api.dto.SalonDTO;
+
+// Imports de tes Repositories
+import com.example.mesSalonsDeCoiffure_api.repositories.CreneauRepository;
+import com.example.mesSalonsDeCoiffure_api.repositories.EmployeRepository;
+import com.example.mesSalonsDeCoiffure_api.repositories.PrestationRepository;
+import com.example.mesSalonsDeCoiffure_api.repositories.SalonRepository;
+import com.example.mesSalonsDeCoiffure_api.repositories.UtilisateurRepository;
 
 @RestController
 @RequestMapping("/api/admin/salons")
 public class AdminController {
 
+    private static final Logger log = LoggerFactory.getLogger(AdminController.class);
+
+    // Injection propre par constructeur (Adieu @Autowired !)
     private final SalonRepository salonRepository;
     private final UtilisateurRepository utilisateurRepository;
+    private final EmployeRepository employeRepository;
+    private final PrestationRepository prestationRepository;
+    private final CreneauRepository creneauRepository;
 
-    public AdminController(SalonRepository salonRepository, UtilisateurRepository utilisateurRepository) {
+    public AdminController(SalonRepository salonRepository, 
+                           UtilisateurRepository utilisateurRepository,
+                           EmployeRepository employeRepository, 
+                           PrestationRepository prestationRepository, 
+                           CreneauRepository creneauRepository) {
         this.salonRepository = salonRepository;
         this.utilisateurRepository = utilisateurRepository;
+        this.employeRepository = employeRepository;
+        this.prestationRepository = prestationRepository;
+        this.creneauRepository = creneauRepository;
     }
-
-    @Autowired
-    private com.example.mesSalonsDeCoiffure_api.repositories.EmployeRepository employeRepository;
-    
-    @Autowired
-    private com.example.mesSalonsDeCoiffure_api.repositories.PrestationRepository prestationRepository;
-
-    @Autowired
-    private com.example.mesSalonsDeCoiffure_api.repositories.CreneauRepository creneauRepository;
-
-    private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
 
     // 1. Récupérer UNIQUEMENT les salons du gérant connecté
     @GetMapping
     public List<Salon> getMesSalons(Authentication authentication) {
         String emailGerant = authentication.getName(); 
-        
         Utilisateur gerant = utilisateurRepository.findByEmail(emailGerant)
-            .orElseThrow(() -> new RuntimeException("🚨 ERREUR BDD : Impossible de trouver le gérant avec l'email : " + emailGerant));
+            .orElseThrow(() -> new IllegalArgumentException("Impossible de trouver le gérant"));
         
         return salonRepository.findByGerantId(gerant.getId());
     }
 
-    // 2. Créer un salon et l'attribuer automatiquement au gérant connecté
+    // 2. Créer un salon (Sécurisé avec SalonDTO)
     @PostMapping
-    public Salon creerMonSalon(@RequestBody Salon nouveauSalon, Authentication authentication) {
+    public Salon creerMonSalon(@RequestBody SalonDTO salonDTO, Authentication authentication) {
         String emailGerant = authentication.getName();
         
-        logger.info("➡️ Tentative de création de salon par : " + emailGerant);
+        // Formatage propre du log (plus de concaténation)
+        log.info("➡️ Tentative de création de salon par : {}", emailGerant);
 
         Utilisateur gerant = utilisateurRepository.findByEmail(emailGerant)
-            .orElseThrow(() -> new RuntimeException("🚨 ERREUR BDD : Impossible de trouver le gérant avec l'email : " + emailGerant));
+            .orElseThrow(() -> new IllegalArgumentException("Impossible de trouver le gérant"));
         
+        Salon nouveauSalon = new Salon();
+        nouveauSalon.setNom(salonDTO.getNom());
+        nouveauSalon.setAdresse(salonDTO.getAdresse());
+        nouveauSalon.setLatitude(salonDTO.getLatitude());
+        nouveauSalon.setLongitude(salonDTO.getLongitude());
         nouveauSalon.setGerant(gerant);
+        
         return salonRepository.save(nouveauSalon);
     }
 
-    // 3. Modifier un salon existant
-    @org.springframework.web.bind.annotation.PutMapping("/{id}")
-    public Salon modifierMonSalon(@org.springframework.web.bind.annotation.PathVariable Long id, @RequestBody Salon salonModifie, Authentication authentication) {
+    // 3. Modifier un salon existant (Sécurisé avec SalonDTO)
+    @PutMapping("/{id}")
+    public Salon modifierMonSalon(@PathVariable Long id, @RequestBody SalonDTO salonDTO, Authentication authentication) {
         String emailGerant = authentication.getName();
         Utilisateur gerant = utilisateurRepository.findByEmail(emailGerant).orElseThrow();
 
-        // On cherche le salon en base de données
         Salon salonExistant = salonRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("🚨 Salon introuvable"));
+            .orElseThrow(() -> new IllegalArgumentException("Salon introuvable"));
 
-        // SÉCURITÉ : On vérifie que ce salon appartient bien au gérant connecté !
         if (!salonExistant.getGerant().getId().equals(gerant.getId())) {
-            throw new RuntimeException("🚨 Non autorisé à modifier ce salon !");
+            throw new IllegalArgumentException("Non autorisé à modifier ce salon !");
         }
 
-        // On met à jour les informations
-        salonExistant.setNom(salonModifie.getNom());
-        salonExistant.setAdresse(salonModifie.getAdresse());
-        salonExistant.setLatitude(salonModifie.getLatitude());
-        salonExistant.setLongitude(salonModifie.getLongitude());
+        salonExistant.setNom(salonDTO.getNom());
+        salonExistant.setAdresse(salonDTO.getAdresse());
+        salonExistant.setLatitude(salonDTO.getLatitude());
+        salonExistant.setLongitude(salonDTO.getLongitude());
 
         return salonRepository.save(salonExistant);
     }
 
-    // 4. Supprimer un salon
-    @org.springframework.web.bind.annotation.DeleteMapping("/{id}")
-    public org.springframework.http.ResponseEntity<?> supprimerMonSalon(@org.springframework.web.bind.annotation.PathVariable Long id, Authentication authentication) {
+    // 4. Supprimer un salon (Correction du ResponseEntity<?>)
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> supprimerMonSalon(@PathVariable Long id, Authentication authentication) {
         String emailGerant = authentication.getName();
         Utilisateur gerant = utilisateurRepository.findByEmail(emailGerant).orElseThrow();
 
-        // 1. On cherche le salon
         Salon salonExistant = salonRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("🚨 Salon introuvable"));
+            .orElseThrow(() -> new IllegalArgumentException("Salon introuvable"));
 
-        // 2. SÉCURITÉ : On vérifie que c'est bien LE SIEN
         if (!salonExistant.getGerant().getId().equals(gerant.getId())) {
-            return org.springframework.http.ResponseEntity.status(403).body("{\"erreur\": \"Non autorisé à supprimer ce salon !\"}");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("{\"erreur\": \"Non autorisé à supprimer ce salon !\"}");
         }
 
-        // 3. On supprime
         salonRepository.delete(salonExistant);
-        
-        // On renvoie un message de succès au format JSON (Angular préfère ça)
-        return org.springframework.http.ResponseEntity.ok().body("{\"message\": \"Salon supprimé avec succès\"}");
+        return ResponseEntity.ok().body("{\"message\": \"Salon supprimé avec succès\"}");
     }
-
 
     // --- GESTION DES EMPLOYÉS ---
     
     @GetMapping("/{salonId}/employes")
-    public List<com.example.mesSalonsDeCoiffure_api.entities.Employe> getEmployes(@PathVariable Long salonId) {
+    public List<Employe> getEmployes(@PathVariable Long salonId) {
         return employeRepository.findBySalonId(salonId);
     }
 
     @PostMapping("/{salonId}/employes")
-    public com.example.mesSalonsDeCoiffure_api.entities.Employe addEmploye(@PathVariable Long salonId, @RequestBody com.example.mesSalonsDeCoiffure_api.entities.Employe employe) {
+    public Employe addEmploye(@PathVariable Long salonId, @RequestBody EmployeDTO employeDTO) {
         Salon salon = salonRepository.findById(salonId).orElseThrow();
+        
+        Employe employe = new Employe();
+        employe.setNom(employeDTO.getNom());
         employe.setSalon(salon);
+        
         return employeRepository.save(employe);
     }
 
     @PutMapping("/employes/{employeId}")
-    public com.example.mesSalonsDeCoiffure_api.entities.Employe updateEmploye(@PathVariable Long employeId, @RequestBody com.example.mesSalonsDeCoiffure_api.entities.Employe employeDetails) {
-        com.example.mesSalonsDeCoiffure_api.entities.Employe employe = employeRepository.findById(employeId).orElseThrow();
-        employe.setNom(employeDetails.getNom());
+    public Employe updateEmploye(@PathVariable Long employeId, @RequestBody EmployeDTO employeDTO) {
+        Employe employe = employeRepository.findById(employeId).orElseThrow();
+        employe.setNom(employeDTO.getNom());
         return employeRepository.save(employe);
     }
 
     @DeleteMapping("/employes/{employeId}")
-    public org.springframework.http.ResponseEntity<?> deleteEmploye(@PathVariable Long employeId) {
+    public ResponseEntity<Void> deleteEmploye(@PathVariable Long employeId) {
         employeRepository.deleteById(employeId);
-        return org.springframework.http.ResponseEntity.ok().build();
+        return ResponseEntity.ok().build();
     }
 
     // --- GESTION DES PRESTATIONS ---
     
     @GetMapping("/{salonId}/prestations")
-    public List<com.example.mesSalonsDeCoiffure_api.entities.Prestation> getPrestations(@PathVariable Long salonId) {
+    public List<Prestation> getPrestations(@PathVariable Long salonId) {
         return prestationRepository.findBySalonId(salonId);
     }
 
     @PostMapping("/{salonId}/prestations")
-    public com.example.mesSalonsDeCoiffure_api.entities.Prestation addPrestation(@PathVariable Long salonId, @RequestBody com.example.mesSalonsDeCoiffure_api.entities.Prestation prestation) {
+    public Prestation addPrestation(@PathVariable Long salonId, @RequestBody PrestationDTO prestationDTO) {
         Salon salon = salonRepository.findById(salonId).orElseThrow();
+        
+        Prestation prestation = new Prestation();
+        prestation.setNom(prestationDTO.getNom());
+        prestation.setDureeMinutes(prestationDTO.getDureeMinutes());
+        prestation.setPrix(prestationDTO.getPrix());
         prestation.setSalon(salon);
+        
         return prestationRepository.save(prestation);
     }
 
     @PutMapping("/prestations/{prestationId}")
-    public com.example.mesSalonsDeCoiffure_api.entities.Prestation updatePrestation(@PathVariable Long prestationId, @RequestBody com.example.mesSalonsDeCoiffure_api.entities.Prestation details) {
-        com.example.mesSalonsDeCoiffure_api.entities.Prestation prestation = prestationRepository.findById(prestationId).orElseThrow();
-        prestation.setNom(details.getNom());
-        prestation.setDureeMinutes(details.getDureeMinutes());
-        prestation.setPrix(details.getPrix());
+    public Prestation updatePrestation(@PathVariable Long prestationId, @RequestBody PrestationDTO prestationDTO) {
+        Prestation prestation = prestationRepository.findById(prestationId).orElseThrow();
+        prestation.setNom(prestationDTO.getNom());
+        prestation.setDureeMinutes(prestationDTO.getDureeMinutes());
+        prestation.setPrix(prestationDTO.getPrix());
         return prestationRepository.save(prestation);
     }
 
     @DeleteMapping("/prestations/{prestationId}")
-    public org.springframework.http.ResponseEntity<?> deletePrestation(@PathVariable Long prestationId) {
+    public ResponseEntity<Void> deletePrestation(@PathVariable Long prestationId) {
         prestationRepository.deleteById(prestationId);
-        return org.springframework.http.ResponseEntity.ok().build();
+        return ResponseEntity.ok().build();
     }
 
-
-    // --- GESTION DES COMPÉTENCES (Prestations par Employé) ---
+    // --- GESTION DES COMPÉTENCES ---
 
     @PostMapping("/employes/{employeId}/prestations/{prestationId}")
-    public com.example.mesSalonsDeCoiffure_api.entities.Employe assignerPrestation(@PathVariable Long employeId, @PathVariable Long prestationId) {
-        com.example.mesSalonsDeCoiffure_api.entities.Employe employe = employeRepository.findById(employeId).orElseThrow();
-        com.example.mesSalonsDeCoiffure_api.entities.Prestation prestation = prestationRepository.findById(prestationId).orElseThrow();
+    public Employe assignerPrestation(@PathVariable Long employeId, @PathVariable Long prestationId) {
+        Employe employe = employeRepository.findById(employeId).orElseThrow();
+        Prestation prestation = prestationRepository.findById(prestationId).orElseThrow();
         
-        // Si l'employé n'a pas déjà cette prestation, on l'ajoute
         if (!employe.getPrestations().contains(prestation)) {
             employe.getPrestations().add(prestation);
         }
@@ -189,35 +203,37 @@ public class AdminController {
     }
 
     @DeleteMapping("/employes/{employeId}/prestations/{prestationId}")
-    public com.example.mesSalonsDeCoiffure_api.entities.Employe retirerPrestation(@PathVariable Long employeId, @PathVariable Long prestationId) {
-        com.example.mesSalonsDeCoiffure_api.entities.Employe employe = employeRepository.findById(employeId).orElseThrow();
-        com.example.mesSalonsDeCoiffure_api.entities.Prestation prestation = prestationRepository.findById(prestationId).orElseThrow();
+    public Employe retirerPrestation(@PathVariable Long employeId, @PathVariable Long prestationId) {
+        Employe employe = employeRepository.findById(employeId).orElseThrow();
+        Prestation prestation = prestationRepository.findById(prestationId).orElseThrow();
         
         employe.getPrestations().remove(prestation);
         return employeRepository.save(employe);
     }
 
+    // --- GESTION DES CRÉNEAUX ---
 
-// Récupérer tous les créneaux d'un salon
     @GetMapping("/{salonId}/creneaux")
-    public java.util.List<com.example.mesSalonsDeCoiffure_api.entities.Creneau> getCreneaux(@PathVariable Long salonId) {
-        // 👇 On utilise le nouveau nom de la méthode ici aussi
+    public List<Creneau> getCreneaux(@PathVariable Long salonId) {
         return creneauRepository.findByEmployeSalonIdOrderByJourSemaineAscHeureDebutAsc(salonId);
     }
 
-    // Ajouter un créneau manuellement
     @PostMapping("/employes/{employeId}/creneaux")
-    public com.example.mesSalonsDeCoiffure_api.entities.Creneau addCreneau(@PathVariable Long employeId, @RequestBody com.example.mesSalonsDeCoiffure_api.entities.Creneau creneau) {
-        com.example.mesSalonsDeCoiffure_api.entities.Employe employe = employeRepository.findById(employeId).orElseThrow();
+    public Creneau addCreneau(@PathVariable Long employeId, @RequestBody CreneauDTO creneauDTO) {
+        Employe employe = employeRepository.findById(employeId).orElseThrow();
+        
+        Creneau creneau = new Creneau();
+        creneau.setJourSemaine(creneauDTO.getJourSemaine());
+        creneau.setHeureDebut(creneauDTO.getHeureDebut());
         creneau.setEmploye(employe);
         creneau.setStatut("DISPONIBLE");
+        
         return creneauRepository.save(creneau);
     }
 
-    // Supprimer un créneau
     @DeleteMapping("/creneaux/{creneauId}")
-    public org.springframework.http.ResponseEntity<?> deleteCreneau(@PathVariable Long creneauId) {
+    public ResponseEntity<Void> deleteCreneau(@PathVariable Long creneauId) {
         creneauRepository.deleteById(creneauId);
-        return org.springframework.http.ResponseEntity.ok().build();
+        return ResponseEntity.ok().build();
     }
 }

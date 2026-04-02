@@ -1,6 +1,5 @@
 package com.example.mesSalonsDeCoiffure_api.security;
 
-import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -14,7 +13,7 @@ public class JwtService {
 
     // Une clé secrète générée pour signer les tokens (ne jamais la partager en vrai !)
     private final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-    private final long EXPIRATION_TIME = 86400000; // 1 jour en millisecondes
+    private static final long EXPIRATION_TIME = 86400000; // 1 jour en millisecondes
 
     // Fabriquer un token pour un email et un rôle
     public String generateToken(String email, String role) {
