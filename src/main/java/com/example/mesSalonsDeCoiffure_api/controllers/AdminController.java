@@ -21,7 +21,6 @@ import com.example.mesSalonsDeCoiffure_api.repositories.UtilisateurRepository;
 
 @RestController
 @RequestMapping("/api/admin/salons")
-@CrossOrigin(origins = "*")
 public class AdminController {
 
     @Autowired

@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/reservations")
-@CrossOrigin(origins = "*")
+
 public class ReservationController {
 
     @Autowired

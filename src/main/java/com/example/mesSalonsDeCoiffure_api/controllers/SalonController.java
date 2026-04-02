@@ -10,7 +10,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/salons")
-@CrossOrigin(origins = "*") // ⚠️ TRES IMPORTANT : Autorise Angular (qui tourne sur un autre port) à appeler cette API
+ // ⚠️ TRES IMPORTANT : Autorise Angular (qui tourne sur un autre port) à appeler cette API
 public class SalonController {
 
     @Autowired

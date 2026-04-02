@@ -15,7 +15,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*") // Autorise Angular à faire des requêtes
+ // Autorise Angular à faire des requêtes
 public class AuthController {
 
     @Autowired
