@@ -46,7 +46,7 @@ jobs:
 
       # 2. On lance les tests en forçant Spring Boot à utiliser la base temporaire
       - name: Maven Build & Test
-        run: mvn -B clean verify
+        run: mvn -B -U clean verify
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/mes_salons
           SPRING_DATASOURCE_USERNAME: user
