@@ -2,8 +2,12 @@ package com.example.mesSalonsDeCoiffure_api.controllers;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+
+// 🌟 LES VRAIS IMPORTS SPRING BOOT 4 🌟
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -11,16 +15,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @SpringBootTest
-@AutoConfigureMockMvc 
+@AutoConfigureMockMvc
+@AutoConfigureTestDatabase
 class SalonPublicControllerTest {
 
-    private final MockMvc mockMvc;
-
-    // Dans les tests, JUnit exige un @Autowired sur le constructeur
     @Autowired
-    public SalonPublicControllerTest(MockMvc mockMvc) {
-        this.mockMvc = mockMvc;
-    }
+    private MockMvc mockMvc;
 
     @Test
     void quandVisiteurDemandeEmployes_alorsReponseOk() throws Exception {

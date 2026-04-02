@@ -124,6 +124,13 @@ Si vous souhaitez explorer la base de données PostgreSQL manuellement, un serve
 - Base de données : mes_salons
 - Identifiants : Voir le fichier docker-compose.yml (POSTGRES_USER et POSTGRES_PASSWORD).
 
+## Tests 
+
+```
+cd ./mesSalonsDeCoiffure-api
+./mvnw clean test
+```
+
 ## ⚙️ Intégration Continue (CI/CD)
 
 Le projet est lié à GitHub Actions. À chaque push sur la branche main :
@@ -132,4 +139,5 @@ Le projet est lié à GitHub Actions. À chaque push sur la branche main :
 - Les tests unitaires et d'intégration sont exécutés. (désactivé pour l'instant)
 - Une nouvelle image Docker est construite.
 - L'image est publiée sur le GitHub Container Registry (GHCR) prête à être déployée sur le serveur VPS de production.
+
 
