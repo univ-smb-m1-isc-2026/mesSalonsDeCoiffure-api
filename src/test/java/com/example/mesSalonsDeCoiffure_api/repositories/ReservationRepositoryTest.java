@@ -16,15 +16,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class ReservationRepositoryTest {
 
-    @Autowired
-    private ReservationRepository reservationRepository;
+    private final ReservationRepository reservationRepository;
+    private final UtilisateurRepository utilisateurRepository;
 
+    // Dans les tests, JUnit exige un @Autowired sur le constructeur
     @Autowired
-    private UtilisateurRepository utilisateurRepository;
+    public ReservationRepositoryTest(ReservationRepository reservationRepository, UtilisateurRepository utilisateurRepository) {
+        this.reservationRepository = reservationRepository;
+        this.utilisateurRepository = utilisateurRepository;
+    }
 
     @Test
     void quandRechercheParTelephone_alorsRetourneLesBonnesReservations() {
-        // 1. ARRANGEMENT (On prépare les données)
+        // 1. ARRANGEMENT
         Utilisateur client = new Utilisateur();
         client.setNom("Dupont");
         client.setTelephone("0600000000");
@@ -35,10 +39,10 @@ class ReservationRepositoryTest {
         rdv.setClient(client);
         reservationRepository.save(rdv);
 
-        // 2. ACTION (On teste notre méthode personnalisée)
+        // 2. ACTION
         List<Reservation> resultats = reservationRepository.findByClientTelephoneOrderByDateHeureDebutDesc("0600000000");
 
-        // 3. ASSERTION (On vérifie le résultat)
+        // 3. ASSERTION
         assertEquals(1, resultats.size(), "On devrait trouver 1 rendez-vous pour ce numéro");
         assertEquals("0600000000", resultats.get(0).getClient().getTelephone());
     }

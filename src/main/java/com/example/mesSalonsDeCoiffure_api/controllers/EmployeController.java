@@ -6,24 +6,22 @@ import com.example.mesSalonsDeCoiffure_api.entities.Salon;
 import com.example.mesSalonsDeCoiffure_api.repositories.EmployeRepository;
 import com.example.mesSalonsDeCoiffure_api.repositories.PrestationRepository;
 import com.example.mesSalonsDeCoiffure_api.repositories.SalonRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/employes")
-
 public class EmployeController {
 
-    @Autowired
-    private EmployeRepository employeRepository;
+    private final EmployeRepository employeRepository;
+    private final SalonRepository salonRepository;
+    private final PrestationRepository prestationRepository;
 
-    @Autowired
-    private SalonRepository salonRepository;
+    public EmployeController(EmployeRepository employeRepository, SalonRepository salonRepository, PrestationRepository prestationRepository) {
+        this.employeRepository = employeRepository;
+        this.salonRepository = salonRepository;
+        this.prestationRepository = prestationRepository;
+    }
 
-    @Autowired
-    private PrestationRepository prestationRepository;
-
-    // 1. Embaucher un employé dans un salon
     @PostMapping("/salon/{salonId}")
     public Employe ajouterEmploye(@PathVariable Long salonId, @RequestBody Employe employe) {
         Salon salon = salonRepository.findById(salonId)
@@ -32,7 +30,6 @@ public class EmployeController {
         return employeRepository.save(employe);
     }
 
-    // 2. Assigner une prestation (compétence) à un employé
     @PostMapping("/{employeId}/prestations/{prestationId}")
     public Employe assignerPrestation(@PathVariable Long employeId, @PathVariable Long prestationId) {
         Employe employe = employeRepository.findById(employeId)
@@ -41,7 +38,6 @@ public class EmployeController {
         Prestation prestation = prestationRepository.findById(prestationId)
                 .orElseThrow(() -> new RuntimeException("Prestation non trouvée"));
 
-        // On ajoute la prestation à la liste de l'employé
         employe.getPrestations().add(prestation);
         return employeRepository.save(employe);
     }

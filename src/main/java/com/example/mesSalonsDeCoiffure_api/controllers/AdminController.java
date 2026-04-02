@@ -19,15 +19,20 @@ import com.example.mesSalonsDeCoiffure_api.entities.Utilisateur;
 import com.example.mesSalonsDeCoiffure_api.repositories.SalonRepository;
 import com.example.mesSalonsDeCoiffure_api.repositories.UtilisateurRepository;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @RestController
 @RequestMapping("/api/admin/salons")
 public class AdminController {
 
-    @Autowired
-    private SalonRepository salonRepository;
-    
-    @Autowired
-    private UtilisateurRepository utilisateurRepository;
+    private final SalonRepository salonRepository;
+    private final UtilisateurRepository utilisateurRepository;
+
+    public AdminController(SalonRepository salonRepository, UtilisateurRepository utilisateurRepository) {
+        this.salonRepository = salonRepository;
+        this.utilisateurRepository = utilisateurRepository;
+    }
 
     @Autowired
     private com.example.mesSalonsDeCoiffure_api.repositories.EmployeRepository employeRepository;
@@ -37,6 +42,8 @@ public class AdminController {
 
     @Autowired
     private com.example.mesSalonsDeCoiffure_api.repositories.CreneauRepository creneauRepository;
+
+    private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
 
     // 1. Récupérer UNIQUEMENT les salons du gérant connecté
     @GetMapping
@@ -54,7 +61,7 @@ public class AdminController {
     public Salon creerMonSalon(@RequestBody Salon nouveauSalon, Authentication authentication) {
         String emailGerant = authentication.getName();
         
-        System.out.println("➡️ Tentative de création de salon par : " + emailGerant);
+        logger.info("➡️ Tentative de création de salon par : " + emailGerant);
 
         Utilisateur gerant = utilisateurRepository.findByEmail(emailGerant)
             .orElseThrow(() -> new RuntimeException("🚨 ERREUR BDD : Impossible de trouver le gérant avec l'email : " + emailGerant));

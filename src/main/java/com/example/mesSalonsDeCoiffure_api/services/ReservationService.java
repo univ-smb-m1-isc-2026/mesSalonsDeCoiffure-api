@@ -10,7 +10,6 @@ import com.example.mesSalonsDeCoiffure_api.repositories.EmployeRepository;
 import com.example.mesSalonsDeCoiffure_api.repositories.PrestationRepository;
 import com.example.mesSalonsDeCoiffure_api.repositories.RendezVousRepository;
 import com.example.mesSalonsDeCoiffure_api.repositories.UtilisateurRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -19,19 +18,23 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Service // ⚠️ Très important pour que Spring reconnaisse ce fichier !
+@Service
 public class ReservationService {
 
-    @Autowired
-    private RendezVousRepository rendezVousRepository;
-    @Autowired
-    private EmployeRepository employeRepository;
-    @Autowired
-    private PrestationRepository prestationRepository;
-    @Autowired
-    private UtilisateurRepository utilisateurRepository;
+    // Remplacement de @Autowired par champs 'final' et constructeur
+    private final RendezVousRepository rendezVousRepository;
+    private final EmployeRepository employeRepository;
+    private final PrestationRepository prestationRepository;
+    private final UtilisateurRepository utilisateurRepository;
 
-    // --- MÉTHODE 1 : Trouver les créneaux libres ---
+    public ReservationService(RendezVousRepository rendezVousRepository, EmployeRepository employeRepository, 
+                              PrestationRepository prestationRepository, UtilisateurRepository utilisateurRepository) {
+        this.rendezVousRepository = rendezVousRepository;
+        this.employeRepository = employeRepository;
+        this.prestationRepository = prestationRepository;
+        this.utilisateurRepository = utilisateurRepository;
+    }
+
     public List<CreneauDisponibleDTO> calculerCreneauxDisponibles(Long employeId, Long prestationId, LocalDate dateRecherche) {
         
         Employe employe = employeRepository.findById(employeId)
@@ -67,7 +70,6 @@ public class ReservationService {
         return creneauxLibres;
     }
 
-    // --- MÉTHODE 2 : Enregistrer le rendez-vous final ---
     public RendezVous enregistrerRendezVous(ReservationRequestDTO demande) {
         
         Utilisateur client = utilisateurRepository.findById(demande.getUtilisateurId())
