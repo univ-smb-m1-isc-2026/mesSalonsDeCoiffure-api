@@ -4,7 +4,8 @@ WORKDIR /app
 COPY pom.xml .
 COPY src ./src
 # On force le repackage pour être sûr d'avoir un "Fat JAR" exécutable
-RUN mvn clean package spring-boot:repackage -DskipTests
+RUN mvn clean package spring-boot:repackage -Dmaven.test.skip=true
+
 
 # Étape 2 : Lancement avec Java 21
 FROM eclipse-temurin:21-jre
