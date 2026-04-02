@@ -13,8 +13,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "1. Authentification", description = "Création de compte et connexion (Publique)")
 public class AuthController {
 
     private final UtilisateurRepository utilisateurRepository;
@@ -29,6 +33,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
+    @Operation(summary = "Créer un nouveau compte client ou gérant")
     public ResponseEntity<AuthResponseDTO> register(@RequestBody RegisterRequestDTO request) {
         
         if (utilisateurRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -50,6 +55,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @Operation(summary = "Se connecter et récupérer le Token JWT")
     public ResponseEntity<AuthResponseDTO> login(@RequestBody AuthRequestDTO request) {
         Optional<Utilisateur> userOpt = utilisateurRepository.findByEmail(request.getEmail());
 

@@ -1,99 +1,135 @@
-# mesSalonsDeCoiffure-api
+# ✂️ API Mes Salons de Coiffure
 
-## Architecture
+Une API RESTful robuste et sécurisée pour la gestion de salons de coiffure, incluant la gestion des employés, des prestations, des plannings et des réservations de créneaux. 
 
-https://start.spring.io/
+Ce projet sert de Backend à une application Frontend (ex: Angular) et suit les meilleures pratiques de développement (Clean Code, Sécurité JWT, CI/CD).
 
-```
-Dans le dossier src/main/java/com/example/mesSalonsDeCoiffure_api/
+## 🛠️ Technologies Utilisées
 
-    entities (Modèle de données)
+* **Langage :** Java 21
+* **Framework :** Spring Boot 3 (Spring Web, Spring Data JPA, Spring Security)
+* **Base de données :** PostgreSQL
+* **Sécurité :** JSON Web Tokens (JWT) & Modèle DTO
+* **Documentation :** Swagger / OpenAPI
+* **DevOps :** Docker, Docker Compose, GitHub Actions (CI/CD)
+* **Qualité de code :** SonarQube
 
-    repositories (Accès base de données)
+---
 
-    services (Logique métier, ex: calcul des créneaux)
+## 📂 Architecture du Projet
 
-    controllers (Endpoints REST pour ton Angular)
+Le code source est organisé selon une architecture en couches (Clean Architecture) pour séparer les responsabilités :
 
-    dto (Objets de transfert pour ne pas exposer directement tes entités)
-```
-
-## Exécution Docker 
-
-```
-Action	        Commande Docker (Simple)	Commande Docker Compose
-Construire	    docker build -t nom .	    docker-compose build
-Démarrer	    docker run nom	            docker-compose up
-Arrêter   	    docker stop id_conteneur	docker-compose down
-Voir les logs	docker logs id_conteneur	docker-compose logs -f
-```
-
-```
-docker build -t messalons-api .
-```
-
-```
-(Nettoyage)
-docker builder prune -f
+```text
+src/main/java/com/example/mesSalonsDeCoiffure_api/
+ ├── config/       # Configurations globales (ex: Swagger/OpenAPI, CORS)
+ ├── controllers/  # Endpoints REST (Points d'entrée de l'API)
+ ├── dto/          # Objets de transfert (Sécurité : masque les entités BDD)
+ ├── entities/     # Modèle de données (Tables PostgreSQL)
+ ├── repositories/ # Interfaces d'accès à la base de données (Spring Data JPA)
+ ├── security/     # Filtres JWT, gestion des rôles et configuration Spring Security
+ └── services/     # Logique métier complexe et tâches planifiées (Cron)
 ```
 
-## pgAdmin (provisoire)
+## Démarrage Rapide (Docker)
 
-🔌 Étape 1 : Ajouter le serveur dans pgAdmin
+La méthode la plus simple pour lancer le projet et sa base de données est d'utiliser Docker.
 
-    Ouvre ton interface pgAdmin dans ton navigateur.
-
-    Dans la colonne de gauche, fais un clic droit sur Servers.
-
-    Va sur Register (Enregistrer) > Server....
-
-    Une boîte de dialogue s'ouvre.
-
-📝 Étape 2 : L'onglet "General"
-
-    Name : Donne-lui le nom que tu veux (ex: BDD Mes Salons). C'est juste pour toi.
-
-🔗 Étape 3 : L'onglet "Connection" (Le plus important !)
-
-C'est ici qu'il faut relier pgAdmin à ton conteneur Docker. Remplis les champs comme ceci (je me base sur les logs de ton API que tu m'as envoyés plus tôt) :
-
-    Host name/address : * Cas A (pgAdmin tourne AUSSI dans ton Docker) : Tape db. (C'est le nom de ton conteneur de base de données, Docker fera le lien tout seul).
-
-        Cas B (pgAdmin est un logiciel installé directement sur ton PC/Mac) : Tape localhost.
-
-    Port : 5432 (c'est le port par défaut).
-
-    Maintenance database : mes_salons (J'ai vu dans tes logs que c'était le nom de ta base).
-
-    Username : Regarde dans ton fichier docker-compose.yml, sous la section db (généralement c'est postgres ou admin).
-
-    Password : Pareil, regarde ton docker-compose.yml (le mot de passe que tu as défini pour POSTGRES_PASSWORD).
-
-    Coche la case Save password pour ne pas avoir à le retaper à chaque fois.
-
-👁️ Étape 4 : Visualiser la magie
-
-Si la connexion réussit, ton nouveau serveur va apparaître à gauche. Déroule les dossiers dans cet ordre précis :
-
-    📂 Servers > BDD Mes Salons
-
-    🛢️ Databases > mes_salons
-
-    📁 Schemas > public
-
-    📋 Tables
-## Testing 
+### 1. Cloner le projet :
 
 ```
-Invoke-RestMethod -Uri "http://localhost:8080/api/salons" -Method Post -ContentType "application/json" -Body '{"nom": "Docker Coiffure", "adresse": "127.0.0.1 Rue du Conteneur", "latitude": 45.6885, "longitude": 5.9153}'
+git clone [https://github.com/univ-smb-m1-isc-2026/messalonsdecoiffure-api.git](https://github.com/univ-smb-m1-isc-2026/messalonsdecoiffure-api.git)
+```
 
-Invoke-RestMethod -Uri "http://localhost:8080/api/salons" -Method Get
+### 2. Lancer les conteneurs (Base de données + API) :
 
+#### Docker-compose.yml à copier et utile pour le test/build local :
+```
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: mes_salons
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build: ./mesSalonsDeCoiffure-api
+    ports:
+      - "8080:8080"
+    environment:
+      # 👇 On remet les identifiants LOCAUX ici ! 👇
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/mes_salons
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    depends_on:
+      - db
+
+  web:
+    build: ./mesSalonsDeCoiffure-web
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin_container
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+      
+volumes:
+  pgdata:
+```
+
+```
+docker-compose up --build -d
+(ou bien)
 docker compose up --build -d api
-docker compose up --build -d   
-docker compose logs -f api
-docker compose down -v
-
-docker builder prune -f
-docker compose build --no-cache
 ```
+
+L'API sera disponible sur http://localhost:8080 ou https://api.manage-your-scissors.oups.net si prod.
+
+Commandes Docker utiles :
+
+- docker-compose logs -f api : Voir les logs de l'API en direct.
+- docker-compose down -v : Arrêter et supprimer les conteneurs (et purger la BDD).
+
+## 📖 Documentation de l'API (Swagger)
+
+L'API est entièrement documentée et interactive grâce à Swagger. Une fois l'application démarrée, ouvrez votre navigateur à l'adresse suivante :
+
+👉 http://localhost:8080/swagger-ui.html ou https://api.manage-your-scissors.oups.net/swagger-ui.html
+
+Comment tester les routes protégées ?
+
+- Utilisez la route POST /api/auth/login pour vous connecter avec vos identifiants.
+- Copiez le Token JWT reçu en réponse.
+- Cliquez sur le bouton vert "Authorize" en haut de la page Swagger et collez votre Token. Toutes vos requêtes seront désormais authentifiées !
+
+## 🛢️ Accès Base de Données (pgAdmin)
+
+Si vous souhaitez explorer la base de données PostgreSQL manuellement, un serveur pgAdmin peut être configuré :
+
+- Hôte : localhost (ou db si pgAdmin est dans le même réseau Docker)
+- Port : 5432
+- Base de données : mes_salons
+- Identifiants : Voir le fichier docker-compose.yml (POSTGRES_USER et POSTGRES_PASSWORD).
+
+## ⚙️ Intégration Continue (CI/CD)
+
+Le projet est lié à GitHub Actions. À chaque push sur la branche main :
+
+- Le code est compilé avec Maven.
+- Les tests unitaires et d'intégration sont exécutés. (désactivé pour l'instant)
+- Une nouvelle image Docker est construite.
+- L'image est publiée sur le GitHub Container Registry (GHCR) prête à être déployée sur le serveur VPS de production.
+
