@@ -6,6 +6,9 @@ import java.util.List;
 
 public interface CreneauRepository extends JpaRepository<Creneau, Long> {
     
-    // 👇 On remplace "Date" par "JourSemaine" dans le nom de la méthode
+    // Pour l'affichage Admin
     List<Creneau> findByEmployeSalonIdOrderByJourSemaineAscHeureDebutAsc(Long salonId);
+
+    // 🌟 INDISPENSABLE pour le calcul des disponibilités 🌟
+    List<Creneau> findByEmployeIdAndJourSemaine(Long employeId, String jourSemaine);
 }

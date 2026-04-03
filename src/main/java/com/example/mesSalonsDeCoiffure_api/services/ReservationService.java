@@ -1,15 +1,19 @@
 package com.example.mesSalonsDeCoiffure_api.services;
 
+import com.example.mesSalonsDeCoiffure_api.dto.CreneauDTO;
 import com.example.mesSalonsDeCoiffure_api.dto.CreneauDisponibleDTO;
 import com.example.mesSalonsDeCoiffure_api.dto.ReservationRequestDTO;
+import com.example.mesSalonsDeCoiffure_api.entities.Creneau;
 import com.example.mesSalonsDeCoiffure_api.entities.Employe;
 import com.example.mesSalonsDeCoiffure_api.entities.Prestation;
 import com.example.mesSalonsDeCoiffure_api.entities.RendezVous;
 import com.example.mesSalonsDeCoiffure_api.entities.Utilisateur;
+import com.example.mesSalonsDeCoiffure_api.repositories.CreneauRepository;
 import com.example.mesSalonsDeCoiffure_api.repositories.EmployeRepository;
 import com.example.mesSalonsDeCoiffure_api.repositories.PrestationRepository;
 import com.example.mesSalonsDeCoiffure_api.repositories.RendezVousRepository;
 import com.example.mesSalonsDeCoiffure_api.repositories.UtilisateurRepository;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -26,50 +30,84 @@ public class ReservationService {
     private final EmployeRepository employeRepository;
     private final PrestationRepository prestationRepository;
     private final UtilisateurRepository utilisateurRepository;
-
-    public ReservationService(RendezVousRepository rendezVousRepository, EmployeRepository employeRepository, 
-                              PrestationRepository prestationRepository, UtilisateurRepository utilisateurRepository) {
+    private final CreneauRepository creneauRepository;
+    
+    public ReservationService(RendezVousRepository rendezVousRepository, 
+                              EmployeRepository employeRepository, 
+                              PrestationRepository prestationRepository, 
+                              UtilisateurRepository utilisateurRepository,
+                              CreneauRepository creneauRepository) {
         this.rendezVousRepository = rendezVousRepository;
         this.employeRepository = employeRepository;
         this.prestationRepository = prestationRepository;
         this.utilisateurRepository = utilisateurRepository;
+        this.creneauRepository = creneauRepository;
     }
 
-    public List<CreneauDisponibleDTO> calculerCreneauxDisponibles(Long employeId, Long prestationId, LocalDate dateRecherche) {
+   // Dans ReservationService.java
+public List<CreneauDisponibleDTO> calculerCreneauxDisponibles(Long employeId, Long prestationId, LocalDate dateRecherche) {
+    // 1. TRADUCTION DU JOUR (Java English -> Ta BDD Français)
+    String jourJava = dateRecherche.getDayOfWeek().name();
+    String jourRecherche = switch (jourJava) {
+        case "MONDAY" -> "LUNDI";
+        case "TUESDAY" -> "MARDI";
+        case "WEDNESDAY" -> "MERCREDI";
+        case "THURSDAY" -> "JEUDI";
+        case "FRIDAY" -> "VENDREDI";
+        case "SATURDAY" -> "SAMEDI";
+        case "SUNDAY" -> "DIMANCHE";
+        default -> jourJava;
+    };
+
+    Prestation prestation = prestationRepository.findById(prestationId).orElseThrow();
+    int duree = prestation.getDureeMinutes();
+    List<CreneauDisponibleDTO> possibleSlots = new ArrayList<>();
+
+    // 2. GESTION DU MODE "PEU IMPORTE"
+    // Si employeId est null, on récupère tous les employés du salon de la prestation
+    List<Long> idsEmployes = new ArrayList<>();
+    if (employeId == null) {
+        employeRepository.findBySalonId(prestation.getSalon().getId())
+                .forEach(e -> idsEmployes.add(e.getId()));
+    } else {
+        idsEmployes.add(employeId);
+    }
+
+    // 3. BOUCLE SUR CHAQUE EMPLOYÉ CONCERNÉ
+    for (Long idEmp : idsEmployes) {
+        List<Creneau> planning = creneauRepository.findByEmployeIdAndJourSemaine(idEmp, jourRecherche);
         
-        Employe employe = employeRepository.findById(employeId)
-                .orElseThrow(() -> new RuntimeException("Employé introuvable"));
-        Prestation prestation = prestationRepository.findById(prestationId)
-                .orElseThrow(() -> new RuntimeException("Prestation introuvable"));
+        LocalDateTime debutJour = dateRecherche.atStartOfDay();
+        LocalDateTime finJour = dateRecherche.atTime(23, 59);
+        List<RendezVous> rdvExistants = rendezVousRepository.findRendezVousByEmployeAndDate(idEmp, debutJour, finJour);
 
-        LocalDateTime debutJournee = LocalDateTime.of(dateRecherche, LocalTime.of(9, 0));
-        LocalDateTime finJournee = LocalDateTime.of(dateRecherche, LocalTime.of(18, 0));
+        for (Creneau tranche : planning) {
+            LocalTime courant = tranche.getHeureDebut();
+            LocalTime limite = tranche.getHeureFin();
 
-        List<RendezVous> rdvExistants = rendezVousRepository.findRendezVousByEmployeAndDate(employeId, debutJournee, finJournee);
-        List<CreneauDisponibleDTO> creneauxLibres = new ArrayList<>();
-        LocalDateTime heureTestee = debutJournee;
+            while (courant.plusMinutes(duree).isBefore(limite) || courant.plusMinutes(duree).equals(limite)) {
+                LocalDateTime slotDebut = LocalDateTime.of(dateRecherche, courant);
+                LocalDateTime slotFin = slotDebut.plusMinutes(duree);
 
-        while (heureTestee.plusMinutes(prestation.getDureeMinutes()).isBefore(finJournee) || 
-               heureTestee.plusMinutes(prestation.getDureeMinutes()).isEqual(finJournee)) {
-            
-            LocalDateTime finTestee = heureTestee.plusMinutes(prestation.getDureeMinutes());
-            boolean conflit = false;
-
-            for (RendezVous rdv : rdvExistants) {
-                if (heureTestee.isBefore(rdv.getDateHeureFin()) && finTestee.isAfter(rdv.getDateHeureDebut())) {
-                    conflit = true;
-                    break;
+                boolean conflit = false;
+                for (RendezVous rdv : rdvExistants) {
+                    if (slotDebut.isBefore(rdv.getDateHeureFin()) && slotFin.isAfter(rdv.getDateHeureDebut())) {
+                        conflit = true;
+                        break;
+                    }
                 }
-            }
 
-            if (!conflit) {
-                creneauxLibres.add(new CreneauDisponibleDTO(heureTestee, finTestee, employe.getId(), employe.getNom()));
+                if (!conflit) {
+                    // On récupère le nom de l'employé pour le DTO
+                    Employe e = employeRepository.findById(idEmp).get();
+                    possibleSlots.add(new CreneauDisponibleDTO(slotDebut, slotFin, idEmp, e.getNom()));
+                }
+                courant = courant.plusMinutes(15);
             }
-            heureTestee = heureTestee.plusMinutes(15);
         }
-        return creneauxLibres;
     }
-
+    return possibleSlots;
+}
     // N'oublie pas d'ajouter le paramètre emailClient si ce n'est pas déjà fait !
     public RendezVous enregistrerRendezVous(ReservationRequestDTO demande, String emailClient) {
         
@@ -86,6 +124,7 @@ public class ReservationService {
         nouveauRdv.setClient(client);
         nouveauRdv.setEmploye(employe);
         nouveauRdv.setPrestation(prestation);
+        nouveauRdv.setSalon(prestation.getSalon());
         
         // 🌟 L'ASSEMBLAGE MAGIQUE EST ICI 🌟
         // On fusionne la LocalDate et la LocalTime envoyées par Angular
@@ -98,4 +137,25 @@ public class ReservationService {
 
         return rendezVousRepository.save(nouveauRdv);
     }
+
+public RendezVous deplacerRendezVous(Long id, ReservationRequestDTO demande, String emailClient) {
+    RendezVous rdvExistant = rendezVousRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Rendez-vous introuvable"));
+            
+    if (!rdvExistant.getClient().getEmail().equals(emailClient)) {
+        throw new RuntimeException("Non autorisé");
+    }
+            
+    Employe nouvelEmploye = employeRepository.findById(demande.getEmployeId()).orElseThrow();
+    Prestation presta = prestationRepository.findById(demande.getPrestationId()).orElseThrow();
+
+    rdvExistant.setEmploye(nouvelEmploye);
+    rdvExistant.setPrestation(presta);
+    
+    LocalDateTime nouvelleDateHeure = LocalDateTime.of(demande.getDate(), demande.getHeureDebut());
+    rdvExistant.setDateHeureDebut(nouvelleDateHeure);
+    rdvExistant.setDateHeureFin(nouvelleDateHeure.plusMinutes(presta.getDureeMinutes()));
+
+    return rendezVousRepository.save(rdvExistant);
+}
 }

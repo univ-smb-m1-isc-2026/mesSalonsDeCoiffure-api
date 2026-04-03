@@ -14,7 +14,7 @@ public class Creneau {
     private String jourSemaine; 
     
     private LocalTime heureDebut;
-    
+    private LocalTime heureFin;
     // Le statut qui avait disparu !
     private String statut = "DISPONIBLE";
 
@@ -33,6 +33,9 @@ public class Creneau {
 
     public LocalTime getHeureDebut() { return heureDebut; }
     public void setHeureDebut(LocalTime heureDebut) { this.heureDebut = heureDebut; }
+
+    public LocalTime getHeureFin() { return heureFin; }
+    public void setHeureFin(LocalTime heureFin) { this.heureFin = heureFin; }
 
     public String getStatut() { return statut; }
     public void setStatut(String statut) { this.statut = statut; }

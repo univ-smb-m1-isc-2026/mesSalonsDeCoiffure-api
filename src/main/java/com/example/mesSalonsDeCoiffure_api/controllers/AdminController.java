@@ -213,6 +213,7 @@ public class AdminController {
 
     // --- GESTION DES CRÉNEAUX ---
 
+
     @GetMapping("/{salonId}/creneaux")
     public List<Creneau> getCreneaux(@PathVariable Long salonId) {
         return creneauRepository.findByEmployeSalonIdOrderByJourSemaineAscHeureDebutAsc(salonId);
@@ -220,14 +221,21 @@ public class AdminController {
 
     @PostMapping("/employes/{employeId}/creneaux")
     public Creneau addCreneau(@PathVariable Long employeId, @RequestBody CreneauDTO creneauDTO) {
-        Employe employe = employeRepository.findById(employeId).orElseThrow();
+        Employe employe = employeRepository.findById(employeId)
+            .orElseThrow(() -> new IllegalArgumentException("Employé introuvable"));
         
         Creneau creneau = new Creneau();
         creneau.setJourSemaine(creneauDTO.getJourSemaine());
         creneau.setHeureDebut(creneauDTO.getHeureDebut());
+        // 🌟 AJOUT DE L'HEURE DE FIN
+        creneau.setHeureFin(creneauDTO.getHeureFin()); 
+        
         creneau.setEmploye(employe);
         creneau.setStatut("DISPONIBLE");
         
+        log.info("📅 Ajout d'un créneau pour {}: {} ({} - {})", 
+                 employe.getNom(), creneau.getJourSemaine(), creneau.getHeureDebut(), creneau.getHeureFin());
+
         return creneauRepository.save(creneau);
     }
 

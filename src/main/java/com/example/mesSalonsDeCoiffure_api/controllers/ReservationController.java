@@ -40,4 +40,17 @@ public class ReservationController {
         // 2. On passe la demande ET l'email au service !
         return ResponseEntity.ok(reservationService.enregistrerRendezVous(demande, emailClient));
     }
+
+    // 🌟 L'AJOUT EST ICI : La route pour attraper ton this.http.put() d'Angular 🌟
+    @PutMapping("/{id}/deplacer")
+    public ResponseEntity<?> deplacerReservation(
+            @PathVariable Long id, 
+            @RequestBody ReservationRequestDTO demande, 
+            Authentication authentication) {
+        
+        // Sécurité : On récupère l'email pour s'assurer que seul le vrai client modifie son RDV
+        String emailClient = authentication.getName();
+        
+        return ResponseEntity.ok(reservationService.deplacerRendezVous(id, demande, emailClient));
+    }
 }

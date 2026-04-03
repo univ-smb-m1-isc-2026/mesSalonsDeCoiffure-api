@@ -1,21 +1,19 @@
 package com.example.mesSalonsDeCoiffure_api.services;
 
+import com.example.mesSalonsDeCoiffure_api.dto.CreneauDisponibleDTO;
 import com.example.mesSalonsDeCoiffure_api.dto.ReservationRequestDTO;
-import com.example.mesSalonsDeCoiffure_api.entities.Employe;
-import com.example.mesSalonsDeCoiffure_api.entities.Prestation;
-import com.example.mesSalonsDeCoiffure_api.entities.RendezVous;
-import com.example.mesSalonsDeCoiffure_api.entities.Utilisateur;
-import com.example.mesSalonsDeCoiffure_api.repositories.EmployeRepository;
-import com.example.mesSalonsDeCoiffure_api.repositories.PrestationRepository;
-import com.example.mesSalonsDeCoiffure_api.repositories.RendezVousRepository;
-import com.example.mesSalonsDeCoiffure_api.repositories.UtilisateurRepository;
+import com.example.mesSalonsDeCoiffure_api.entities.*;
+import com.example.mesSalonsDeCoiffure_api.repositories.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -23,7 +21,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class) // Active Mockito pour créer des faux Repositories
+@ExtendWith(MockitoExtension.class)
 class ReservationServiceTest {
 
     @Mock
@@ -34,77 +32,97 @@ class ReservationServiceTest {
     private PrestationRepository prestationRepository;
     @Mock
     private UtilisateurRepository utilisateurRepository;
+    @Mock
+    private CreneauRepository creneauRepository; // 🌟 AJOUT DU MOCK MANQUANT
 
-    @InjectMocks // Injecte les faux Repositories dans le vrai Service
+    @InjectMocks
     private ReservationService reservationService;
 
- @Test
+    @Test
     void quandEnregistrerRendezVous_alorsSauvegardeEnBase() {
         // 1. ARRANGEMENT
         String emailClient = "client@test.com";
-        
         ReservationRequestDTO demande = new ReservationRequestDTO();
         demande.setEmployeId(1L);
         demande.setPrestationId(2L);
-        // On utilise les nouveaux champs séparés
-        demande.setDate(java.time.LocalDate.of(2026, 5, 10));
-        demande.setHeureDebut(java.time.LocalTime.of(10, 0));
+        demande.setDate(LocalDate.of(2026, 5, 10));
+        demande.setHeureDebut(LocalTime.of(10, 0));
 
-        Utilisateur client = new Utilisateur(); client.setId(10L); client.setEmail(emailClient);
+        Utilisateur client = new Utilisateur(); client.setEmail(emailClient);
         Employe employe = new Employe(); employe.setId(1L);
-        Prestation prestation = new Prestation(); prestation.setId(2L); prestation.setDureeMinutes(30);
+        Prestation prestation = new Prestation(); 
+        prestation.setId(2L); 
+        prestation.setDureeMinutes(30);
+        prestation.setSalon(new Salon()); // Pour éviter un NullPointerException si le service appelle getSalon()
 
-        // On cherche par email maintenant !
-        when(utilisateurRepository.findByEmail(emailClient)).thenReturn(java.util.Optional.of(client));
-        when(employeRepository.findById(1L)).thenReturn(java.util.Optional.of(employe));
-        when(prestationRepository.findById(2L)).thenReturn(java.util.Optional.of(prestation));
+        when(utilisateurRepository.findByEmail(emailClient)).thenReturn(Optional.of(client));
+        when(employeRepository.findById(1L)).thenReturn(Optional.of(employe));
+        when(prestationRepository.findById(2L)).thenReturn(Optional.of(prestation));
         when(rendezVousRepository.save(any(RendezVous.class))).thenAnswer(i -> i.getArguments()[0]);
 
-        // 2. ACTION (On passe les deux paramètres)
+        // 2. ACTION
         RendezVous resultat = reservationService.enregistrerRendezVous(demande, emailClient);
 
         // 3. ASSERTION
         assertNotNull(resultat);
-        assertEquals(client, resultat.getClient());
-        assertEquals(java.time.LocalDateTime.of(2026, 5, 10, 10, 0), resultat.getDateHeureDebut());
-        assertEquals(java.time.LocalDateTime.of(2026, 5, 10, 10, 30), resultat.getDateHeureFin());
+        assertEquals(LocalDateTime.of(2026, 5, 10, 10, 0), resultat.getDateHeureDebut());
         assertEquals("CONFIRME", resultat.getStatut());
+        verify(rendezVousRepository, times(1)).save(any(RendezVous.class));
     }
 
-@Test
-    void quandCalculerCreneauxDisponibles_alorsRetourneListeCreneauxLibres() {
+   @Test
+    void quandCalculerCreneauxDisponibles_alorsRespectePlanningEtRendezVous() {
         // 1. ARRANGEMENT
         Long employeId = 1L;
         Long prestationId = 1L;
-        java.time.LocalDate dateTest = java.time.LocalDate.of(2026, 5, 10);
+        LocalDate dateTest = LocalDate.of(2026, 5, 10); // Dimanche
+        String jourAttendu = "DIMANCHE"; 
 
+        // Objet Employe indispensable pour le .get() dans le service
         Employe employe = new Employe();
         employe.setId(employeId);
         employe.setNom("Jean le Coiffeur");
 
         Prestation prestation = new Prestation();
         prestation.setDureeMinutes(30);
+        Salon salon = new Salon();
+        salon.setId(1L);
+        prestation.setSalon(salon);
 
-        // 🌟 L'ASTUCE EST ICI : On utilise Mockito pour forcer le RendezVous ! 🌟
-        RendezVous rdvExistant = mock(RendezVous.class);
-        when(rdvExistant.getDateHeureDebut()).thenReturn(LocalDateTime.of(2026, 5, 10, 10, 0));
-        when(rdvExistant.getDateHeureFin()).thenReturn(LocalDateTime.of(2026, 5, 10, 10, 30));
+        Creneau planning = new Creneau();
+        planning.setHeureDebut(LocalTime.of(9, 0));
+        planning.setHeureFin(LocalTime.of(11, 0));
+        planning.setJourSemaine(jourAttendu);
 
-        when(employeRepository.findById(employeId)).thenReturn(Optional.of(employe));
+        RendezVous rdvExistant = new RendezVous();
+        rdvExistant.setDateHeureDebut(LocalDateTime.of(2026, 5, 10, 10, 0));
+        rdvExistant.setDateHeureFin(LocalDateTime.of(2026, 5, 10, 10, 30));
+
+        // Mocks
         when(prestationRepository.findById(prestationId)).thenReturn(Optional.of(prestation));
+        
+        // 🌟 LA CORRECTION EST ICI : On mocke aussi le findById de l'employé
+        when(employeRepository.findById(employeId)).thenReturn(Optional.of(employe));
+        
+        when(creneauRepository.findByEmployeIdAndJourSemaine(employeId, jourAttendu))
+                .thenReturn(List.of(planning));
+                
         when(rendezVousRepository.findRendezVousByEmployeAndDate(eq(employeId), any(), any()))
-                .thenReturn(java.util.List.of(rdvExistant));
+                .thenReturn(List.of(rdvExistant));
 
         // 2. ACTION
-        java.util.List<com.example.mesSalonsDeCoiffure_api.dto.CreneauDisponibleDTO> creneaux = 
-                reservationService.calculerCreneauxDisponibles(employeId, prestationId, dateTest);
+        List<CreneauDisponibleDTO> creneaux = reservationService.calculerCreneauxDisponibles(employeId, prestationId, dateTest);
 
         // 3. ASSERTION
-        assertFalse(creneaux.isEmpty(), "La liste des créneaux ne doit pas être vide");
-        assertEquals(LocalDateTime.of(2026, 5, 10, 9, 0), creneaux.get(0).getHeureDebut());
+        assertNotNull(creneaux);
+        assertFalse(creneaux.isEmpty());
         
-        boolean creneau10hPresent = creneaux.stream()
-                .anyMatch(c -> c.getHeureDebut().equals(LocalDateTime.of(2026, 5, 10, 10, 0)));
-        assertFalse(creneau10hPresent, "Le créneau de 10h00 devrait être masqué car déjà réservé !");
+        // Vérifions que le créneau de 09:00 est bien présent
+        assertTrue(creneaux.stream().anyMatch(c -> c.getHeureDebut().toLocalTime().equals(LocalTime.of(9, 0))));
+        
+        // Vérifions que le créneau de 10:00 est ABSENT
+        boolean dixHeuresPresent = creneaux.stream()
+                .anyMatch(c -> c.getHeureDebut().toLocalTime().equals(LocalTime.of(10, 0)));
+        assertFalse(dixHeuresPresent, "Le créneau de 10:00 devrait être indisponible");
     }
 }

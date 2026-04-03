@@ -24,10 +24,15 @@ public class RendezVous {
     @JoinColumn(name = "prestation_id")
     private Prestation prestation;
 
+    @ManyToOne
+    @JoinColumn(name = "salon_id")
+    private Salon salon;
+
     // Ex: CONFIRME, ANNULE, ANTICIPE, TERMINE
     private String statut; 
 
-    // Getters et Setters
+    // --- Getters et Setters ---
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -46,7 +51,9 @@ public class RendezVous {
     public Prestation getPrestation() { return prestation; }
     public void setPrestation(Prestation prestation) { this.prestation = prestation; }
 
+    public Salon getSalon() { return salon; }
+    public void setSalon(Salon salon) { this.salon = salon; }
+
     public String getStatut() { return statut; }
-    public void setStatut(String statut) {this.statut = statut;}
-    
+    public void setStatut(String statut) { this.statut = statut; }
 }
