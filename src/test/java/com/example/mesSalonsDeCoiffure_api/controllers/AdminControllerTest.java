@@ -162,7 +162,7 @@ class AdminControllerTest {
 
     @Test
     void quandAssignerPrestation_alorsTestLaBrancheIf() {
-        // 1. ARRANGEMENT : Test du 'if (!employe.getPrestations().contains(prestation))'
+        // 1. ARRANGEMENT : Test du si
         Employe employe = new Employe();
         employe.setPrestations(new java.util.ArrayList<>()); // Liste vide au départ
         Prestation prestation = new Prestation();
