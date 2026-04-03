@@ -1,6 +1,5 @@
 package com.example.mesSalonsDeCoiffure_api.services;
 
-import com.example.mesSalonsDeCoiffure_api.dto.CreneauDTO;
 import com.example.mesSalonsDeCoiffure_api.dto.CreneauDisponibleDTO;
 import com.example.mesSalonsDeCoiffure_api.dto.ReservationRequestDTO;
 import com.example.mesSalonsDeCoiffure_api.entities.Creneau;
@@ -8,6 +7,7 @@ import com.example.mesSalonsDeCoiffure_api.entities.Employe;
 import com.example.mesSalonsDeCoiffure_api.entities.Prestation;
 import com.example.mesSalonsDeCoiffure_api.entities.RendezVous;
 import com.example.mesSalonsDeCoiffure_api.entities.Utilisateur;
+import com.example.mesSalonsDeCoiffure_api.exceptions.ResourceNotFoundException;
 import com.example.mesSalonsDeCoiffure_api.repositories.CreneauRepository;
 import com.example.mesSalonsDeCoiffure_api.repositories.EmployeRepository;
 import com.example.mesSalonsDeCoiffure_api.repositories.PrestationRepository;
@@ -118,11 +118,16 @@ public class ReservationService {
 
     // --- MÉTHODES DE RÉSERVATION ---
 
-    public RendezVous enregistrerRendezVous(ReservationRequestDTO demande, String emailClient) {
-        Utilisateur client = utilisateurRepository.findByEmail(emailClient).orElseThrow();
-        Employe employe = employeRepository.findById(demande.getEmployeId()).orElseThrow();
-        Prestation prestation = prestationRepository.findById(demande.getPrestationId()).orElseThrow();
-
+public RendezVous enregistrerRendezVous(ReservationRequestDTO demande, String emailClient) {
+    Utilisateur client = utilisateurRepository.findByEmail(emailClient)
+            .orElseThrow(() -> new ResourceNotFoundException("Utilisateur introuvable : " + emailClient));
+            
+    Employe employe = employeRepository.findById(demande.getEmployeId())
+            .orElseThrow(() -> new ResourceNotFoundException("Employé introuvable ID : " + demande.getEmployeId()));
+            
+    Prestation prestation = prestationRepository.findById(demande.getPrestationId())
+            .orElseThrow(() -> new ResourceNotFoundException("Prestation introuvable ID : " + demande.getPrestationId()));
+            
         RendezVous nouveauRdv = new RendezVous();
         nouveauRdv.setClient(client);
         nouveauRdv.setEmploye(employe);
@@ -137,8 +142,9 @@ public class ReservationService {
         return rendezVousRepository.save(nouveauRdv);
     }
 
-    public RendezVous deplacerRendezVous(Long id, ReservationRequestDTO demande, String emailClient) {
-        RendezVous rdv = rendezVousRepository.findById(id).orElseThrow();
+public RendezVous deplacerRendezVous(Long id, ReservationRequestDTO demande, String emailClient) {
+    RendezVous rdv = rendezVousRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Rendez-vous introuvable ID : " + id));
         if (!rdv.getClient().getEmail().equals(emailClient)) throw new RuntimeException("Non autorisé");
 
         Employe emp = employeRepository.findById(demande.getEmployeId()).orElseThrow();

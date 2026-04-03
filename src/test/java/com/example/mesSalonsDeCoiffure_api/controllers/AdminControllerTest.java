@@ -119,9 +119,8 @@ class AdminControllerTest {
         when(salonRepository.findById(10L)).thenReturn(Optional.of(salon));
 
         // 2 & 3. ACTION & ASSERTION : On vérifie que la sécurité bloque bien avec une Exception
-        assertThrows(IllegalArgumentException.class, () -> {
-            adminController.modifierMonSalon(10L, new SalonDTO(), authentication);
-        }, "Non autorisé à modifier ce salon !");
+        assertThrows(IllegalArgumentException.class, 
+            () -> adminController.modifierMonSalon(10L, new SalonDTO(), authentication));
     }
 
     @Test
@@ -157,9 +156,8 @@ class AdminControllerTest {
         when(salonRepository.findById(999L)).thenReturn(Optional.empty()); // BDD vide
 
         // 2 & 3. ACTION & ASSERTION : Le .orElseThrow doit s'activer
-        assertThrows(IllegalArgumentException.class, () -> {
-            adminController.modifierMonSalon(999L, new SalonDTO(), authentication);
-        });
+        assertThrows(IllegalArgumentException.class, 
+            () -> adminController.modifierMonSalon(999L, new SalonDTO(), authentication));
     }
 
     @Test
