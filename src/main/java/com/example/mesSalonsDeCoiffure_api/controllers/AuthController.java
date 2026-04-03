@@ -25,7 +25,6 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    // Injection par constructeur (Spring l'injecte automatiquement, plus besoin de @Autowired)
     public AuthController(UtilisateurRepository utilisateurRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.utilisateurRepository = utilisateurRepository;
         this.passwordEncoder = passwordEncoder;
@@ -41,13 +40,20 @@ public class AuthController {
                     .body(new AuthResponseDTO(null, null, "Cet email est déjà utilisé."));
         }
 
-        // On transfère les données du DTO vers une vraie Entité Utilisateur
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setNom(request.getNom());
+        // 🐛 CORRECTION 1 : On n'oublie pas le prénom !
+        utilisateur.setPrenom(request.getPrenom()); 
         utilisateur.setEmail(request.getEmail());
         utilisateur.setTelephone(request.getTelephone());
         utilisateur.setMotDePasse(passwordEncoder.encode(request.getMotDePasse()));
-        utilisateur.setRole("USER"); 
+        
+        // 🐛 CORRECTION 2 : On prend le rôle envoyé par Angular (s'il existe), sinon on met USER
+        if (request.getRole() != null && !request.getRole().isEmpty()) {
+            utilisateur.setRole(request.getRole());
+        } else {
+            utilisateur.setRole("USER"); 
+        }
         
         utilisateurRepository.save(utilisateur);
         

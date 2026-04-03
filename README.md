@@ -96,7 +96,7 @@ docker-compose up --build -d
 docker compose up --build -d api
 ```
 
-L'API sera disponible sur http://localhost:8080 ou https://api.manage-your-scissors.oups.net si prod.
+L'API sera disponible sur http://localhost:8080 ou https://api.manage-your-scissors.oups.net si prod (à pusher).
 
 Commandes Docker utiles :
 
@@ -107,7 +107,7 @@ Commandes Docker utiles :
 
 L'API est entièrement documentée et interactive grâce à Swagger. Une fois l'application démarrée, ouvrez votre navigateur à l'adresse suivante :
 
-👉 http://localhost:8080/swagger-ui.html ou https://api.manage-your-scissors.oups.net/swagger-ui.html
+👉 http://localhost:8080/swagger-ui.html ou https://api.manage-your-scissors.oups.net/swagger-ui.html si prod (à pusher)
 
 Comment tester les routes protégées ?
 
@@ -126,9 +126,17 @@ Si vous souhaitez explorer la base de données PostgreSQL manuellement, un serve
 
 ## Tests 
 
+Executez pour obtenir un dossier target : 
 ```
 cd ./mesSalonsDeCoiffure-api
 ./mvnw clean test
+```
+
+Pour trouver le coverage >50% :
+
+```
+cd mesSalonsDeCoiffure-api\target\site\jacoco
+index.html
 ```
 
 ## ⚙️ Intégration Continue (CI/CD)
