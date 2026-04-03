@@ -68,7 +68,7 @@ class AuthControllerTest {
         RegisterRequestDTO request = new RegisterRequestDTO();
         request.setEmail("nouveau@test.com");
         request.setMotDePasse("12345");
-        request.setRole("ADMIN"); // Test de la branche "if (request.getRole() != null)"
+        request.setRole("ADMIN"); // Test de la branche 
 
         when(utilisateurRepository.findByEmail("nouveau@test.com")).thenReturn(Optional.empty());
         when(passwordEncoder.encode("12345")).thenReturn("mdp_encode");
