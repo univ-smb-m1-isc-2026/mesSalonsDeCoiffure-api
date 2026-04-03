@@ -145,7 +145,9 @@ public RendezVous enregistrerRendezVous(ReservationRequestDTO demande, String em
 public RendezVous deplacerRendezVous(Long id, ReservationRequestDTO demande, String emailClient) {
     RendezVous rdv = rendezVousRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Rendez-vous introuvable ID : " + id));
-        if (!rdv.getClient().getEmail().equals(emailClient)) throw new RuntimeException("Non autorisé");
+    // ✅ Au lieu de RuntimeException
+    Utilisateur client = utilisateurRepository.findByEmail(emailClient)
+    .orElseThrow(() -> new ResourceNotFoundException("Client non trouvé : " + emailClient));
 
         Employe emp = employeRepository.findById(demande.getEmployeId()).orElseThrow();
         Prestation p = prestationRepository.findById(demande.getPrestationId()).orElseThrow();
