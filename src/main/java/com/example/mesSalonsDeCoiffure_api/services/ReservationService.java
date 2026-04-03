@@ -97,10 +97,14 @@ public List<CreneauDisponibleDTO> calculerCreneauxDisponibles(Long employeId, Lo
                     }
                 }
 
+                // Dans ta boucle de calcul (ReservationService.java)
                 if (!conflit) {
-                    // On récupère le nom de l'employé pour le DTO
-                    Employe e = employeRepository.findById(idEmp).get();
-                    possibleSlots.add(new CreneauDisponibleDTO(slotDebut, slotFin, idEmp, e.getNom()));
+                    // 🌟 On récupère l'objet complet pour avoir le nom
+                    Employe emp = employeRepository.findById(idEmp)
+                        .orElseThrow(() -> new RuntimeException("Employé introuvable"));
+                    
+                    // On passe bien le nom à la fin du constructeur
+                    possibleSlots.add(new CreneauDisponibleDTO(slotDebut, slotFin, idEmp, emp.getNom()));
                 }
                 courant = courant.plusMinutes(15);
             }
