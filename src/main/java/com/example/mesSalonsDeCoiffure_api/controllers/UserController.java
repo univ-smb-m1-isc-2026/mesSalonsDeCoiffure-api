@@ -1,10 +1,10 @@
 package com.example.mesSalonsDeCoiffure_api.controllers;
 
 import com.example.mesSalonsDeCoiffure_api.dto.UserUpdateDTO;
-import com.example.mesSalonsDeCoiffure_api.entities.Reservation;
+import com.example.mesSalonsDeCoiffure_api.entities.RendezVous;
 import com.example.mesSalonsDeCoiffure_api.entities.Utilisateur;
-import com.example.mesSalonsDeCoiffure_api.repositories.ReservationRepository;
-import com.example.mesSalonsDeCoiffure_api.repositories.UtilisateurRepository;
+import com.example.mesSalonsDeCoiffure_api.services.UserService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,41 +14,24 @@ import java.util.List;
 @RequestMapping("/api/users")
 public class UserController {
 
-    private final UtilisateurRepository utilisateurRepository;
-    private final ReservationRepository reservationRepository;
+    private final UserService userService;
 
-    public UserController(UtilisateurRepository utilisateurRepository, ReservationRepository reservationRepository) {
-        this.utilisateurRepository = utilisateurRepository;
-        this.reservationRepository = reservationRepository;
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
 
     @GetMapping("/me")
-    public Utilisateur getMonProfil(Authentication authentication) {
-        String email = authentication.getName();
-        return utilisateurRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
+    public ResponseEntity<Utilisateur> getMonProfil(Authentication authentication) {
+        return ResponseEntity.ok(userService.getMonProfil(authentication.getName()));
     }
 
     @PutMapping("/me")
-    public Utilisateur modifierMonProfil(@RequestBody UserUpdateDTO modifications, Authentication authentication) {
-        String email = authentication.getName();
-        Utilisateur userActuel = utilisateurRepository.findByEmail(email).orElseThrow();
-
-        // Transfert sécurisé
-        userActuel.setNom(modifications.getNom());
-        userActuel.setTelephone(modifications.getTelephone());
-        userActuel.setRappelsReguliers(modifications.isRappelsReguliers());
-        userActuel.setNotifsWhatsapp(modifications.isNotifsWhatsapp());
-
-        return utilisateurRepository.save(userActuel);
+    public ResponseEntity<Utilisateur> modifierMonProfil(@RequestBody UserUpdateDTO modifications, Authentication authentication) {
+        return ResponseEntity.ok(userService.modifierMonProfil(modifications, authentication.getName()));
     }
 
     @GetMapping("/me/reservations")
-    public List<Reservation> getMesRendezVous(Authentication authentication) {
-        String email = authentication.getName();
-        Utilisateur client = utilisateurRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
-
-        return reservationRepository.findByClientTelephoneOrderByDateHeureDebutDesc(client.getTelephone());
+    public ResponseEntity<List<RendezVous>> getMesRendezVous(Authentication authentication) {
+        return ResponseEntity.ok(userService.getMesRendezVous(authentication.getName()));
     }
 }

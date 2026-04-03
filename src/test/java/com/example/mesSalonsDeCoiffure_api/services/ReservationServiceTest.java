@@ -38,37 +38,37 @@ class ReservationServiceTest {
     @InjectMocks // Injecte les faux Repositories dans le vrai Service
     private ReservationService reservationService;
 
-    @Test
-    void quandEnregistrerRendezVous_alorsSauvegardeReussie() {
-        // 1. ARRANGEMENT (On prépare les fausses données)
-        ReservationRequestDTO demande = new ReservationRequestDTO();
-        demande.setUtilisateurId(1L);
-        demande.setEmployeId(2L);
-        demande.setPrestationId(3L);
-        demande.setDateHeureDebut(LocalDateTime.of(2026, 5, 10, 14, 0));
-
-        Utilisateur fauxClient = new Utilisateur(); fauxClient.setId(1L);
-        Employe fauxEmploye = new Employe(); fauxEmploye.setId(2L);
-        Prestation faussePrestation = new Prestation(); faussePrestation.setDureeMinutes(30);
-
-        // On dicte à Mockito ce qu'il doit répondre
-        when(utilisateurRepository.findById(1L)).thenReturn(Optional.of(fauxClient));
-        when(employeRepository.findById(2L)).thenReturn(Optional.of(fauxEmploye));
-        when(prestationRepository.findById(3L)).thenReturn(Optional.of(faussePrestation));
+ @Test
+    void quandEnregistrerRendezVous_alorsSauvegardeEnBase() {
+        // 1. ARRANGEMENT
+        String emailClient = "client@test.com";
         
-        // Quand on sauvegarde, on renvoie simplement l'objet sauvegardé
+        ReservationRequestDTO demande = new ReservationRequestDTO();
+        demande.setEmployeId(1L);
+        demande.setPrestationId(2L);
+        // On utilise les nouveaux champs séparés
+        demande.setDate(java.time.LocalDate.of(2026, 5, 10));
+        demande.setHeureDebut(java.time.LocalTime.of(10, 0));
+
+        Utilisateur client = new Utilisateur(); client.setId(10L); client.setEmail(emailClient);
+        Employe employe = new Employe(); employe.setId(1L);
+        Prestation prestation = new Prestation(); prestation.setId(2L); prestation.setDureeMinutes(30);
+
+        // On cherche par email maintenant !
+        when(utilisateurRepository.findByEmail(emailClient)).thenReturn(java.util.Optional.of(client));
+        when(employeRepository.findById(1L)).thenReturn(java.util.Optional.of(employe));
+        when(prestationRepository.findById(2L)).thenReturn(java.util.Optional.of(prestation));
         when(rendezVousRepository.save(any(RendezVous.class))).thenAnswer(i -> i.getArguments()[0]);
 
-        // 2. ACTION (On lance la méthode)
-        RendezVous resultat = reservationService.enregistrerRendezVous(demande);
+        // 2. ACTION (On passe les deux paramètres)
+        RendezVous resultat = reservationService.enregistrerRendezVous(demande, emailClient);
 
-        // 3. ASSERTION (On vérifie que la logique a bien marché)
+        // 3. ASSERTION
         assertNotNull(resultat);
+        assertEquals(client, resultat.getClient());
+        assertEquals(java.time.LocalDateTime.of(2026, 5, 10, 10, 0), resultat.getDateHeureDebut());
+        assertEquals(java.time.LocalDateTime.of(2026, 5, 10, 10, 30), resultat.getDateHeureFin());
         assertEquals("CONFIRME", resultat.getStatut());
-        assertEquals(LocalDateTime.of(2026, 5, 10, 14, 30), resultat.getDateHeureFin()); // 14h00 + 30min
-        
-        // On vérifie que la méthode save() a bien été appelée exactement 1 fois
-        verify(rendezVousRepository, times(1)).save(any(RendezVous.class));
     }
 
 @Test

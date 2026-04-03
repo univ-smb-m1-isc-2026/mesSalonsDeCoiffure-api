@@ -20,4 +20,6 @@ public interface RendezVousRepository extends JpaRepository<RendezVous, Long> {
             @Param("debutJournee") LocalDateTime debutJournee, 
             @Param("finJournee") LocalDateTime finJournee
     );
+
+    List<RendezVous> findByClientIdOrderByDateHeureDebutDesc(Long id);
 }

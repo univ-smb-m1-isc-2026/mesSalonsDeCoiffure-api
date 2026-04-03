@@ -1,23 +1,28 @@
 package com.example.mesSalonsDeCoiffure_api.dto;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 public class ReservationRequestDTO {
-    private Long utilisateurId; // Le profil de l'utilisateur qui réserve
-    private Long employeId;     // Le coiffeur choisi
-    private Long prestationId;  // La coupe choisie
-    private LocalDateTime dateHeureDebut; // Le créneau choisi
+    // Plus besoin de utilisateurId, on le récupère via le Token JWT !
+    
+    private Long employeId;
+    private Long prestationId;
+    
+    // 👇 On sépare la date et l'heure EXACTEMENT comme Angular les envoie !
+    private LocalDate date;
+    private LocalTime heureDebut; 
 
     // --- Getters et Setters ---
-    public Long getUtilisateurId() { return utilisateurId; }
-    public void setUtilisateurId(Long utilisateurId) { this.utilisateurId = utilisateurId; }
-
     public Long getEmployeId() { return employeId; }
     public void setEmployeId(Long employeId) { this.employeId = employeId; }
 
     public Long getPrestationId() { return prestationId; }
     public void setPrestationId(Long prestationId) { this.prestationId = prestationId; }
 
-    public LocalDateTime getDateHeureDebut() { return dateHeureDebut; }
-    public void setDateHeureDebut(LocalDateTime dateHeureDebut) { this.dateHeureDebut = dateHeureDebut; }
+    public LocalDate getDate() { return date; }
+    public void setDate(LocalDate date) { this.date = date; }
+
+    public LocalTime getHeureDebut() { return heureDebut; }
+    public void setHeureDebut(LocalTime heureDebut) { this.heureDebut = heureDebut; }
 }

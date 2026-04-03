@@ -33,9 +33,11 @@ public class ReservationController {
 
     @PostMapping("/reserver")
     public ResponseEntity<?> reserver(@RequestBody ReservationRequestDTO demande, Authentication authentication) {
-        // Idéalement, on passe l'email du client (authentication.getName()) au service
-        // pour qu'il soit sûr de l'identité de la personne qui réserve !
         
-        return ResponseEntity.ok(reservationService.enregistrerRendezVous(demande));
+        // 1. On extrait l'email de la personne connectée grâce au Token JWT
+        String emailClient = authentication.getName(); 
+        
+        // 2. On passe la demande ET l'email au service !
+        return ResponseEntity.ok(reservationService.enregistrerRendezVous(demande, emailClient));
     }
 }

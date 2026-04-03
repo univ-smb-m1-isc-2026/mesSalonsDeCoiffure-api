@@ -16,6 +16,7 @@ import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -56,13 +57,19 @@ class ReservationControllerTest {
         RendezVous rdvCree = new RendezVous();
         rdvCree.setId(99L);
 
-        when(reservationService.enregistrerRendezVous(any(ReservationRequestDTO.class))).thenReturn(rdvCree);
+        // On simule que le token appartient à client@test.com
+        when(authentication.getName()).thenReturn("client@test.com");
+        
+        // On dit à Mockito d'attendre 2 paramètres (le DTO et l'email)
+        when(reservationService.enregistrerRendezVous(any(ReservationRequestDTO.class), eq("client@test.com")))
+            .thenReturn(rdvCree);
 
         // 2. ACTION
         ResponseEntity<?> response = reservationController.reserver(demande, authentication);
 
         // 3. ASSERTION
         assertEquals(200, response.getStatusCode().value());
-        verify(reservationService, times(1)).enregistrerRendezVous(demande);
+        // On vérifie que le service a bien été appelé avec l'email du token
+        verify(reservationService, times(1)).enregistrerRendezVous(demande, "client@test.com");
     }
 }

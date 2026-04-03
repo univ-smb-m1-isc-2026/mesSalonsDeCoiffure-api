@@ -70,9 +70,10 @@ public class ReservationService {
         return creneauxLibres;
     }
 
-    public RendezVous enregistrerRendezVous(ReservationRequestDTO demande) {
+    // N'oublie pas d'ajouter le paramètre emailClient si ce n'est pas déjà fait !
+    public RendezVous enregistrerRendezVous(ReservationRequestDTO demande, String emailClient) {
         
-        Utilisateur client = utilisateurRepository.findById(demande.getUtilisateurId())
+        Utilisateur client = utilisateurRepository.findByEmail(emailClient)
                 .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
                 
         Employe employe = employeRepository.findById(demande.getEmployeId())
@@ -85,9 +86,13 @@ public class ReservationService {
         nouveauRdv.setClient(client);
         nouveauRdv.setEmploye(employe);
         nouveauRdv.setPrestation(prestation);
-        nouveauRdv.setDateHeureDebut(demande.getDateHeureDebut());
         
-        LocalDateTime heureFin = demande.getDateHeureDebut().plusMinutes(prestation.getDureeMinutes());
+        // 🌟 L'ASSEMBLAGE MAGIQUE EST ICI 🌟
+        // On fusionne la LocalDate et la LocalTime envoyées par Angular
+        LocalDateTime dateHeure = LocalDateTime.of(demande.getDate(), demande.getHeureDebut());
+        nouveauRdv.setDateHeureDebut(dateHeure);
+        
+        LocalDateTime heureFin = dateHeure.plusMinutes(prestation.getDureeMinutes());
         nouveauRdv.setDateHeureFin(heureFin);
         nouveauRdv.setStatut("CONFIRME");
 
